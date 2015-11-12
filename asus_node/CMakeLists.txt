@@ -84,7 +84,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS include
+  INCLUDE_DIRS
 #  LIBRARIES asus_node
   CATKIN_DEPENDS sensor_msgs roscpp pcl_ros cv_bridge
   DEPENDS eigen libpc-devel-all opencv2 
