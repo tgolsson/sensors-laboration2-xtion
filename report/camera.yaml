@@ -1,6 +1,6 @@
 image_width: 640
 image_height: 480
-camera_name: narrow_stereo
+camera_name: rgb_PS1080_PrimeSense
 camera_matrix:
   rows: 3
   cols: 3
@@ -9,7 +9,7 @@ distortion_model: plumb_bob
 distortion_coefficients:
   rows: 1
   cols: 5
-  data: [0.073113, -0.19862, 0.002178, 0.001978, 0]
+  data: [0.073113, -0.09862, 0.002178, 0.001978, 0]
 rectification_matrix:
   rows: 3
   cols: 3
