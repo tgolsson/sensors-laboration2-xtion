@@ -52,6 +52,8 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
+
+#include <vector>
 //OPENCV Window names
 #define RGB_WINDOW "RGB Image"
 #define DEPTH_WINDOW "Depth Image"
@@ -160,13 +162,30 @@ class AsusNode {
 	cv::imshow(DEPTH_WINDOW_CENTER, submatrix);
 	cv::waitKey(1);
 	
-	cv::Scalar m;
-	cv::Scalar s;
-	cv::meanStdDev(submatrix, m, s);
-	
+        std::vector<float> values;
 
-	ROS_INFO_STREAM("MEAN:"<<m[0]);
-	ROS_INFO_STREAM("STD:"<<s[0]);
+        float sum = 0;
+        for (cv::MatConstIterator_<float> it = submatrix.begin<float>(); it != submatrix.end<float>(); it++)
+        {
+            if (*it != NAN)
+            {
+                sum += *it;
+                values.push_back(*it);
+            }
+        }
+        float mean = sum / (float)values.size();
+        float varianceSum = 0;
+        for (std::vector<float>::iterator it = values.begin(); it != values.end(); it++)
+        {
+            varianceSum = pow(*it - mean, 2);
+        }
+
+        float stdDev = varianceSum / (float) values.size();
+
+
+	ROS_INFO_STREAM("MEAN:"<<mean);
+	ROS_INFO_STREAM("STD:"<< stdDev);	
+
     }
 
 };
