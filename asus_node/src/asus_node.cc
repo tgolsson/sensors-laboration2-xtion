@@ -55,6 +55,11 @@
 //OPENCV Window names
 #define RGB_WINDOW "RGB Image"
 #define DEPTH_WINDOW "Depth Image"
+#define DEPTH_WINDOW_CENTER "Depth Image Center"
+#define X_COUNT 640
+#define Y_COUNT 480
+#define X_SIZE 20
+#define Y_SIZE 20
 
 //Your Node Class
 class AsusNode {
@@ -94,6 +99,7 @@ class AsusNode {
 	//create opencv windows
 	cv::namedWindow(RGB_WINDOW);
 	cv::namedWindow(DEPTH_WINDOW);
+	cv::namedWindow(DEPTH_WINDOW_CENTER);
     }
 
     // Callback for pointclouds
@@ -101,7 +107,7 @@ class AsusNode {
     {
 	pcl::PointCloud<pcl::PointXYZ> cloud;
 	pcl::fromROSMsg (*msg_in, cloud);
-	pcl::io::savePCDFileASCII ("pcloud.pcd", cloud);
+	//pcl::io::savePCDFileASCII ("pcloud.pcd", cloud);
 		
 	/* do something pointy"*/
 	ROS_INFO_STREAM("Got cloud with "<<cloud.size()<<" points");
@@ -115,8 +121,8 @@ class AsusNode {
 	try
 	{
 	    bridge = cv_bridge::toCvCopy(msg, "bgr8");
-	    cv::FileStorage fs("rgbbmp.yml", cv::FileStorage::WRITE);
-	    fs << "imagergb" << bridge->image;
+	    //cv::FileStorage fs("rgbbmp.yml", cv::FileStorage::WRITE);
+	    //fs << "imagergb" << bridge->image;
 	}
 	catch (cv_bridge::Exception& e)
 	{
@@ -145,6 +151,20 @@ class AsusNode {
 	/* do something depthy"*/
 	cv::imshow(DEPTH_WINDOW, bridge->image);
 	cv::waitKey(1);
+	
+	/* depth center"*/
+	
+	cv::Mat submatrix = bridge->image(cv::Range(Y_COUNT/2-Y_SIZE/2, Y_COUNT/2+Y_SIZE/2), cv::Range(X_COUNT/2-X_SIZE/2, X_COUNT/2+X_SIZE/2));
+	cv::imshow(DEPTH_WINDOW_CENTER, submatrix);
+	cv::waitKey(1);
+	
+	cv::Scalar m;
+	cv::Scalar s;
+	cv::meanStdDev(submatrix, m, s);
+	
+
+	ROS_INFO_STREAM("MEAN:"<<m[0]);
+	ROS_INFO_STREAM("STD:"<<s[0]);
     }
 
 };
