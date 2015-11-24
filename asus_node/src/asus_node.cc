@@ -142,6 +142,8 @@ class AsusNode {
 	try
 	{
 	    bridge = cv_bridge::toCvCopy(msg, "32FC1");
+	    cv::FileStorage fs("rgbdepth.yml", cv::FileStorage::WRITE);
+	    fs << "imagedepth" << bridge->image;
 	}
 	catch (cv_bridge::Exception& e)
 	{
