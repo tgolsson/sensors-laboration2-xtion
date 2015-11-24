@@ -101,7 +101,8 @@ class AsusNode {
     {
 	pcl::PointCloud<pcl::PointXYZ> cloud;
 	pcl::fromROSMsg (*msg_in, cloud);
-
+	pcl::io::savePCDFileASCII ("pcloud.pcd", cloud);
+		
 	/* do something pointy"*/
 	ROS_INFO_STREAM("Got cloud with "<<cloud.size()<<" points");
 
@@ -114,6 +115,8 @@ class AsusNode {
 	try
 	{
 	    bridge = cv_bridge::toCvCopy(msg, "bgr8");
+	    cv::FileStorage fs("rgbbmp.yml", cv::FileStorage::WRITE);
+	    fs << "imagergb" << bridge->image;
 	}
 	catch (cv_bridge::Exception& e)
 	{
