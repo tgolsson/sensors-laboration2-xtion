@@ -57,6 +57,7 @@
 
 
 #include <vector>
+#include <algorithm>
 //OPENCV Window names
 #define RGB_WINDOW "RGB Image"
 #define DEPTH_WINDOW "Depth Image"
@@ -89,7 +90,7 @@ private:
     std::string subscribe_topic_color;
 		
     rosbag::Bag bag;
-    cv::Mat *buffer[10];
+    cv::Mat buffer[10];
     int buffPoint, numElements;
 		
 public:
@@ -100,9 +101,10 @@ public:
 	bag.open("report.bag", rosbag::bagmode::Write);
 	buffPoint = numElements = 0;
 	for (int i=0; i<10; i++){
-		buffer[i] = new cv::Mat(20,20, CV_32F, 0);
+            buffer[i].create(20,20, CV_32F);
+            //cv::Mat(20,20, CV_32F, 0);
 	}
-	//read in topic names from the parameter server
+//	read in topic names from the parameter server
 	nh_.param<std::string>("points_topic",subscribe_topic_point,"/camera/depth_registered/points");
 	nh_.param<std::string>("depth_topic",subscribe_topic_depth,"/camera/depth_registered/image_raw");
 	nh_.param<std::string>("rgb_topic",subscribe_topic_color,"/camera/rgb/image_raw");
@@ -119,6 +121,9 @@ public:
 	cv::namedWindow(GAUSSIAN);
 	cv::namedWindow(MEDIAN);
 	cv::namedWindow(BILATERAL);
+
+        ROS_INFO_STREAM("Finished with constructor");
+
     }
 
     // Callback for pointclouds
@@ -155,99 +160,131 @@ public:
         }
 
     //callback for RGB images
-    void depthCallback(const sensor_msgs::Image::ConstPtr& msg)
-        {
-            cv_bridge::CvImageConstPtr bridge;
-            try
-            {
-                bridge = cv_bridge::toCvCopy(msg, "32FC1");
-                cv::FileStorage fs("rgbdepth.yml", cv::FileStorage::WRITE);
-                fs << "imagedepth" << bridge->image;
-            }
-            catch (cv_bridge::Exception& e)
-            {
-                ROS_ERROR("Failed to transform depth image.");
-                return;
-            }
-            
-            /* do something depthy"*/
-            cv::imshow(DEPTH_WINDOW, bridge->image);
-            cv::waitKey(1);
-	
-            /* depth center"*/
-	
-            cv::Mat submatrix = bridge->image(cv::Range(Y_COUNT/2-Y_SIZE/2, Y_COUNT/2+Y_SIZE/2), cv::Range(X_COUNT/2-X_SIZE/2, X_COUNT/2+X_SIZE/2));
-
-
-            cv::Mat gaussian, median, bilateral;
-						cv::patchNaNs(submatrix);
-						cv::GaussianBlur(submatrix, gaussian, cv::Size(5,5), 0,0);
-            cv::medianBlur(submatrix, median, 5);
-            //cv::bilateralFilter(submatrix, bilateral, 5, 5*2, 5/2);
-	          //cv::imshow(BILATERAL, bilateral);
-            cv::imshow(MEDIAN, median);
-            cv::imshow(GAUSSIAN, gaussian);
-
-
-            cv::imshow(DEPTH_WINDOW_CENTER, submatrix);
-            cv::waitKey(1);
-	
-						buffer[buffPoint] = &gaussian;
-						buffPoint = (buffPoint + 1) % 10;
-						if (numElements < 10)
-							numElements++;
-						cv::Mat output(20,20,CV_32F,0);
-						if (numElements == 10)
-						{
-							for (int y=0; y < 20;y++)
-							{ 
-								for (int x = 0; x  < 20;  x++)
-								{
-									float sum;
-									for (int i=0; i<10; i++) {
-										sum += buffer[i]->at<float>(x,y);
-										
-									}
-									output.at<float>(x,y) = sum/10.0f;
-								}
-							}
-						}
-            std::vector<float> values;
-						cv::imshow(GAUSSIAN, output);
-            float sum = 0;
-            for (cv::MatConstIterator_<float> it = submatrix.begin<float>(); it != submatrix.end<float>(); it++)
-            {
-                if (!std::isnan(*it))
-                {
-                    sum += *it;
-                    values.push_back(*it);
-                }
-            }
-
-
-            float mean = 0;
-            float stdDev = 0;
-            if (values.size() == 0) {
-        	mean = 0;
-        	stdDev = 0;
-            } else {
-                mean = sum / (float)values.size();
-                float varianceSum = 0;
-                for (std::vector<float>::iterator it = values.begin(); it != values.end(); it++)
-                {
-                    varianceSum = pow(*it - mean, 2);
-                }
-        	stdDev = varianceSum / (float) values.size();
-            }
-            ROS_INFO_STREAM("MEAN:"<<mean);
-            ROS_INFO_STREAM("STD:"<< stdDev);	
-            std_msgs::Float32 meanMsg, stdDevMsg;
-            meanMsg.data = mean;
-            stdDevMsg.data = stdDev;
-            bag.write("image", ros::Time::now(), msg);
-            bag.write("mean", ros::Time::now(), meanMsg);
-            bag.write("stddev", ros::Time::now(), stdDevMsg);
+    void depthCallback(const sensor_msgs::Image::ConstPtr& msg)        {
+        ROS_INFO_STREAM("Entering depth callback");
+        cv_bridge::CvImageConstPtr bridge;
+        
+        try{
+            bridge = cv_bridge::toCvCopy(msg, "32FC1");
+            cv::FileStorage fs("rgbdepth.yml", cv::FileStorage::WRITE);
+            fs << "imagedepth" << bridge->image;
         }
+        catch (cv_bridge::Exception& e)
+        {
+            ROS_ERROR("Failed to transform depth image.");
+            return;
+        }
+        
+        /* do something depthy"*/
+        cv::imshow(DEPTH_WINDOW, bridge->image);
+        cv::waitKey(1);
+	
+        /* depth center"*/
+	
+        cv::Mat submatrix = bridge->image(cv::Range(Y_COUNT/2-Y_SIZE/2, Y_COUNT/2+Y_SIZE/2), cv::Range(X_COUNT/2-X_SIZE/2, X_COUNT/2+X_SIZE/2));
+        
+        
+        cv::Mat gaussian, median, bilateral;
+        for (int x = 0; x < X_SIZE; x++)
+        {
+            for (int y=0; y < Y_SIZE; y++) {
+                if (std::isnan(submatrix.at<float>(x,y)))
+                {
+                    submatrix.at<float>(x,y) = 0;
+                }
+            }
+        }
+
+        cv::patchNaNs(submatrix);
+        cv::GaussianBlur(submatrix, gaussian, cv::Size(5,5), 0,0);
+        cv::medianBlur(submatrix, median, 5);
+        cv::bilateralFilter(submatrix, bilateral, 5, 5*2, 5/2);
+        cv::imshow(BILATERAL, bilateral);
+        cv::imshow(MEDIAN, median);
+        cv::imshow(GAUSSIAN, gaussian);
+
+
+        cv::imshow(DEPTH_WINDOW_CENTER, submatrix);
+        cv::waitKey(1);
+	
+
+        buffer[buffPoint] = gaussian;
+        buffPoint = (buffPoint + 1) % 10;
+        
+        if (numElements < 10)
+        {
+            numElements++;
+        }
+        cv::Mat output(20,20,CV_32F);
+        int filter=0;
+        if (numElements == 10)
+        {
+            for (int y=0; y < 20;y++)
+            { 
+                for (int x = 0; x  < 20;  x++)
+                {
+        
+                    switch(filter)
+                    {
+                    case 0: // MEDIAN
+                        float numbers[10];
+                        for (int i=0; i<10; i++) {
+                            numbers[i] = buffer[i].at<float>(x,y);
+        
+                        }
+                        std::sort(&numbers[0], &numbers[9]);
+                        output.at<float>(x,y) = (numbers[4]+numbers[5])/2.0f;
+                        break;
+
+                    case 1:
+                        float sum = 0;
+                        for (int i=0; i<10; i++) {
+                            sum += buffer[i].at<float>(x,y);
+        
+                        }
+                        output.at<float>(x,y) = sum/10.0f;
+                        break;
+                    }
+                }
+            }
+        }
+        cv::imshow(GAUSSIAN, output);
+        std::vector<float> values;
+        float sum = 0;
+        for (cv::MatConstIterator_<float> it = submatrix.begin<float>(); it != submatrix.end<float>(); it++)
+        {
+            if (!std::isnan(*it))
+            {
+                sum += *it;
+                values.push_back(*it);
+            }
+        }
+
+
+        float mean = 0;
+        float stdDev = 0;
+        if (values.size() == 0) {
+            mean = 0;
+            stdDev = 0;
+        } else {
+            mean = sum / (float)values.size();
+            float varianceSum = 0;
+            for (std::vector<float>::iterator it = values.begin(); it != values.end(); it++)            {
+                varianceSum = pow(*it - mean, 2);
+            }
+            stdDev = varianceSum / (float) values.size();
+        }
+        ROS_INFO_STREAM("MEAN:"<<mean);
+        ROS_INFO_STREAM("STD:"<< stdDev);	
+        std_msgs::Float32 meanMsg, stdDevMsg;
+        meanMsg.data = mean;
+        stdDevMsg.data = stdDev;
+        bag.write("image", ros::Time::now(), msg);
+        bag.write("mean", ros::Time::now(), meanMsg);
+        bag.write("stddev", ros::Time::now(), stdDevMsg);
+        ROS_INFO_STREAM("Finished with depth callback");
+
+    }
 
 };
 
