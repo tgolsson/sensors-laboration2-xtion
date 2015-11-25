@@ -51,6 +51,8 @@
 //OPENCV
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <rosbag/bag.h>
+#include <std_msgs/Float32.h>
 
 
 #include <vector>
@@ -81,12 +83,15 @@ class AsusNode {
     std::string subscribe_topic_point;
     std::string subscribe_topic_depth;
     std::string subscribe_topic_color;
-
+		
+		rosbag::Bag bag;
+		
     public:
     AsusNode() {
 
 	nh_ = ros::NodeHandle("~");
 	n_ = ros::NodeHandle();
+	bag.open("report.bag", rosbag::bagmode::Write);
 	
 	//read in topic names from the parameter server
 	nh_.param<std::string>("points_topic",subscribe_topic_point,"/camera/depth_registered/points");
@@ -167,25 +172,34 @@ class AsusNode {
         float sum = 0;
         for (cv::MatConstIterator_<float> it = submatrix.begin<float>(); it != submatrix.end<float>(); it++)
         {
-            if (*it != NAN)
+            if (!std::isnan(*it))
             {
                 sum += *it;
                 values.push_back(*it);
             }
         }
-        float mean = sum / (float)values.size();
-        float varianceSum = 0;
-        for (std::vector<float>::iterator it = values.begin(); it != values.end(); it++)
-        {
-            varianceSum = pow(*it - mean, 2);
+        float mean = 0;
+        float stdDev = 0;
+        if (values.size() == 0) {
+        	mean = 0;
+        	stdDev = 0;
+        } else {
+					mean = sum / (float)values.size();
+		      float varianceSum = 0;
+		      for (std::vector<float>::iterator it = values.begin(); it != values.end(); it++)
+		      {
+		          varianceSum = pow(*it - mean, 2);
+		      }
+        	stdDev = varianceSum / (float) values.size();
         }
-
-        float stdDev = varianceSum / (float) values.size();
-
-
 	ROS_INFO_STREAM("MEAN:"<<mean);
 	ROS_INFO_STREAM("STD:"<< stdDev);	
-
+	std_msgs::Float32 meanMsg, stdDevMsg;
+	meanMsg.data = mean;
+	stdDevMsg.data = stdDev;
+	bag.write("image", ros::Time::now(), msg);
+	bag.write("mean", ros::Time::now(), meanMsg);
+	bag.write("stddev", ros::Time::now(), stdDevMsg);
     }
 
 };
