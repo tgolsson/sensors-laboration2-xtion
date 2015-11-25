@@ -89,6 +89,8 @@ private:
     std::string subscribe_topic_color;
 		
     rosbag::Bag bag;
+    cv::Mat *buffer[10];
+    int buffPoint, numElements;
 		
 public:
     AsusNode() {
@@ -96,7 +98,10 @@ public:
 	nh_ = ros::NodeHandle("~");
 	n_ = ros::NodeHandle();
 	bag.open("report.bag", rosbag::bagmode::Write);
-	
+	buffPoint = numElements = 0;
+	for (int i=0; i<10; i++){
+		buffer[i] = new cv::Mat(20,20, CV_32F, 0);
+	}
 	//read in topic names from the parameter server
 	nh_.param<std::string>("points_topic",subscribe_topic_point,"/camera/depth_registered/points");
 	nh_.param<std::string>("depth_topic",subscribe_topic_depth,"/camera/depth_registered/image_raw");
@@ -175,11 +180,11 @@ public:
 
 
             cv::Mat gaussian, median, bilateral;
-
-            cv::GaussianBlur(submatrix, gaussian, cv::Size(5,5), 0,0);
+						cv::patchNaNs(submatrix);
+						cv::GaussianBlur(submatrix, gaussian, cv::Size(5,5), 0,0);
             cv::medianBlur(submatrix, median, 5);
-            cv::bilateralFilter(submatrix, bilateral, 5, 5*2, 5/2);
-            cv::imshow(BILATERAL, bilateral);
+            //cv::bilateralFilter(submatrix, bilateral, 5, 5*2, 5/2);
+	          //cv::imshow(BILATERAL, bilateral);
             cv::imshow(MEDIAN, median);
             cv::imshow(GAUSSIAN, gaussian);
 
@@ -187,8 +192,28 @@ public:
             cv::imshow(DEPTH_WINDOW_CENTER, submatrix);
             cv::waitKey(1);
 	
+						buffer[buffPoint] = &gaussian;
+						buffPoint = (buffPoint + 1) % 10;
+						if (numElements < 10)
+							numElements++;
+						cv::Mat output(20,20,CV_32F,0);
+						if (numElements == 10)
+						{
+							for (int y=0; y < 20;y++)
+							{ 
+								for (int x = 0; x  < 20;  x++)
+								{
+									float sum;
+									for (int i=0; i<10; i++) {
+										sum += buffer[i]->at<float>(x,y);
+										
+									}
+									output.at<float>(x,y) = sum/10.0f;
+								}
+							}
+						}
             std::vector<float> values;
-
+						cv::imshow(GAUSSIAN, output);
             float sum = 0;
             for (cv::MatConstIterator_<float> it = submatrix.begin<float>(); it != submatrix.end<float>(); it++)
             {
