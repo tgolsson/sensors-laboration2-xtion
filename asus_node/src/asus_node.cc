@@ -164,23 +164,26 @@ public:
                 ROS_ERROR("Failed to transform depth image.");
                 return;
             }
-
-            cv::Mat gaussian, median, bilateral;
-
-            cv::GaussianBlur(bridge->image, gaussian, cv::Size(5,5), 0,0);
-            cv::medianBlur(bridge->image, median, 5);
-            cv::bilateralFilter(bridge->image, bilateral, 5, 5*2, 5/2);
             
             /* do something depthy"*/
             cv::imshow(DEPTH_WINDOW, bridge->image);
-            cv::imshow(BILATERAL, bilateral);
-            cv::imshow(MEDIAN, median);
-            cv::imshow(GAUSSIAN, gaussian);
             cv::waitKey(1);
 	
             /* depth center"*/
 	
             cv::Mat submatrix = bridge->image(cv::Range(Y_COUNT/2-Y_SIZE/2, Y_COUNT/2+Y_SIZE/2), cv::Range(X_COUNT/2-X_SIZE/2, X_COUNT/2+X_SIZE/2));
+
+
+            cv::Mat gaussian, median, bilateral;
+
+            cv::GaussianBlur(submatrix, gaussian, cv::Size(5,5), 0,0);
+            cv::medianBlur(submatrix, median, 5);
+            cv::bilateralFilter(submatrix, bilateral, 5, 5*2, 5/2);
+            cv::imshow(BILATERAL, bilateral);
+            cv::imshow(MEDIAN, median);
+            cv::imshow(GAUSSIAN, gaussian);
+
+
             cv::imshow(DEPTH_WINDOW_CENTER, submatrix);
             cv::waitKey(1);
 	
