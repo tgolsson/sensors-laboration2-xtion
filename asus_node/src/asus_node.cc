@@ -51,6 +51,7 @@
 //OPENCV
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 #include <rosbag/bag.h>
 #include <std_msgs/Float32.h>
 
@@ -60,6 +61,9 @@
 #define RGB_WINDOW "RGB Image"
 #define DEPTH_WINDOW "Depth Image"
 #define DEPTH_WINDOW_CENTER "Depth Image Center"
+#define GAUSSIAN "Gaussian blurred"
+#define MEDIAN "Median blurred"
+#define BILATERAL "Bilateral blurred"
 #define X_COUNT 640
 #define Y_COUNT 480
 #define X_SIZE 20
@@ -68,7 +72,7 @@
 //Your Node Class
 class AsusNode {
 
-    private:
+private:
     // Our NodeHandle, points to home
     ros::NodeHandle nh_;
     //global node handle
@@ -84,9 +88,9 @@ class AsusNode {
     std::string subscribe_topic_depth;
     std::string subscribe_topic_color;
 		
-		rosbag::Bag bag;
+    rosbag::Bag bag;
 		
-    public:
+public:
     AsusNode() {
 
 	nh_ = ros::NodeHandle("~");
@@ -107,100 +111,115 @@ class AsusNode {
 	cv::namedWindow(RGB_WINDOW);
 	cv::namedWindow(DEPTH_WINDOW);
 	cv::namedWindow(DEPTH_WINDOW_CENTER);
+	cv::namedWindow(GAUSSIAN);
+	cv::namedWindow(MEDIAN);
+	cv::namedWindow(BILATERAL);
     }
 
     // Callback for pointclouds
     void points2Callback(const sensor_msgs::PointCloud2::ConstPtr& msg_in)
-    {
-	pcl::PointCloud<pcl::PointXYZ> cloud;
-	pcl::fromROSMsg (*msg_in, cloud);
-	//pcl::io::savePCDFileASCII ("pcloud.pcd", cloud);
+        {
+            pcl::PointCloud<pcl::PointXYZ> cloud;
+            pcl::fromROSMsg (*msg_in, cloud);
+            //pcl::io::savePCDFileASCII ("pcloud.pcd", cloud);
 		
-	/* do something pointy"*/
-	ROS_INFO_STREAM("Got cloud with "<<cloud.size()<<" points");
+            /* do something pointy"*/
+            ROS_INFO_STREAM("Got cloud with "<<cloud.size()<<" points");
 
-    }
+        }
 
     //callback for rgb images
     void rgbCallback(const sensor_msgs::Image::ConstPtr& msg)
-    {
-	cv_bridge::CvImageConstPtr bridge;
-	try
-	{
-	    bridge = cv_bridge::toCvCopy(msg, "bgr8");
-	    //cv::FileStorage fs("rgbbmp.yml", cv::FileStorage::WRITE);
-	    //fs << "imagergb" << bridge->image;
-	}
-	catch (cv_bridge::Exception& e)
-	{
-	    ROS_ERROR("Failed to transform rgb image.");
-	    return;
+        {
+            cv_bridge::CvImageConstPtr bridge;
+            try
+            {
+                bridge = cv_bridge::toCvCopy(msg, "bgr8");
+                //cv::FileStorage fs("rgbbmp.yml", cv::FileStorage::WRITE);
+                //fs << "imagergb" << bridge->image;
+            }
+            catch (cv_bridge::Exception& e)
+            {
+                ROS_ERROR("Failed to transform rgb image.");
+                return;
 
-	}
-	/* do something colorful"*/
-	cv::imshow(RGB_WINDOW, bridge->image);
-	cv::waitKey(1);
-    }
+            }
+            /* do something colorful"*/
+            cv::imshow(RGB_WINDOW, bridge->image);
+            cv::waitKey(1);
+        }
 
     //callback for RGB images
     void depthCallback(const sensor_msgs::Image::ConstPtr& msg)
-    {
-	cv_bridge::CvImageConstPtr bridge;
-	try
-	{
-	    bridge = cv_bridge::toCvCopy(msg, "32FC1");
-	    cv::FileStorage fs("rgbdepth.yml", cv::FileStorage::WRITE);
-	    fs << "imagedepth" << bridge->image;
-	}
-	catch (cv_bridge::Exception& e)
-	{
-	    ROS_ERROR("Failed to transform depth image.");
-	    return;
-	}
-	/* do something depthy"*/
-	cv::imshow(DEPTH_WINDOW, bridge->image);
-	cv::waitKey(1);
-	
-	/* depth center"*/
-	
-	cv::Mat submatrix = bridge->image(cv::Range(Y_COUNT/2-Y_SIZE/2, Y_COUNT/2+Y_SIZE/2), cv::Range(X_COUNT/2-X_SIZE/2, X_COUNT/2+X_SIZE/2));
-	cv::imshow(DEPTH_WINDOW_CENTER, submatrix);
-	cv::waitKey(1);
-	
-        std::vector<float> values;
-
-        float sum = 0;
-        for (cv::MatConstIterator_<float> it = submatrix.begin<float>(); it != submatrix.end<float>(); it++)
         {
-            if (!std::isnan(*it))
+            cv_bridge::CvImageConstPtr bridge;
+            try
             {
-                sum += *it;
-                values.push_back(*it);
+                bridge = cv_bridge::toCvCopy(msg, "32FC1");
+                cv::FileStorage fs("rgbdepth.yml", cv::FileStorage::WRITE);
+                fs << "imagedepth" << bridge->image;
             }
-        }
-        float mean = 0;
-        float stdDev = 0;
-        if (values.size() == 0) {
+            catch (cv_bridge::Exception& e)
+            {
+                ROS_ERROR("Failed to transform depth image.");
+                return;
+            }
+
+            cv::Mat gaussian, median, bilateral;
+
+            cv::GaussianBlur(bridge->image, gaussian, cv::Size(5,5), 0,0);
+            cv::medianBlur(bridge->image, median, 5);
+            cv::bilateralFilter(bridge->image, bilateral, 5, 5*2, 5/2);
+            
+            /* do something depthy"*/
+            cv::imshow(DEPTH_WINDOW, bridge->image);
+            cv::imshow(BILATERAL, bilateral);
+            cv::imshow(MEDIAN, median);
+            cv::imshow(GAUSSIAN, gaussian);
+            cv::waitKey(1);
+	
+            /* depth center"*/
+	
+            cv::Mat submatrix = bridge->image(cv::Range(Y_COUNT/2-Y_SIZE/2, Y_COUNT/2+Y_SIZE/2), cv::Range(X_COUNT/2-X_SIZE/2, X_COUNT/2+X_SIZE/2));
+            cv::imshow(DEPTH_WINDOW_CENTER, submatrix);
+            cv::waitKey(1);
+	
+            std::vector<float> values;
+
+            float sum = 0;
+            for (cv::MatConstIterator_<float> it = submatrix.begin<float>(); it != submatrix.end<float>(); it++)
+            {
+                if (!std::isnan(*it))
+                {
+                    sum += *it;
+                    values.push_back(*it);
+                }
+            }
+
+
+            float mean = 0;
+            float stdDev = 0;
+            if (values.size() == 0) {
         	mean = 0;
         	stdDev = 0;
-        } else {
-					mean = sum / (float)values.size();
-		      float varianceSum = 0;
-		      for (std::vector<float>::iterator it = values.begin(); it != values.end(); it++)
-		      {
-		          varianceSum = pow(*it - mean, 2);
-		      }
+            } else {
+                mean = sum / (float)values.size();
+                float varianceSum = 0;
+                for (std::vector<float>::iterator it = values.begin(); it != values.end(); it++)
+                {
+                    varianceSum = pow(*it - mean, 2);
+                }
         	stdDev = varianceSum / (float) values.size();
+            }
+            ROS_INFO_STREAM("MEAN:"<<mean);
+            ROS_INFO_STREAM("STD:"<< stdDev);	
+            std_msgs::Float32 meanMsg, stdDevMsg;
+            meanMsg.data = mean;
+            stdDevMsg.data = stdDev;
+            bag.write("image", ros::Time::now(), msg);
+            bag.write("mean", ros::Time::now(), meanMsg);
+            bag.write("stddev", ros::Time::now(), stdDevMsg);
         }
-	ROS_INFO_STREAM("MEAN:"<<mean);
-	ROS_INFO_STREAM("STD:"<< stdDev);	
-	std_msgs::Float32 meanMsg, stdDevMsg;
-	meanMsg.data = mean;
-	stdDevMsg.data = stdDev;
-	bag.write("image", ros::Time::now(), msg);
-	bag.write("mean", ros::Time::now(), meanMsg);
-	bag.write("stddev", ros::Time::now(), stdDevMsg);
-    }
 
 };
 
