@@ -84,14 +84,17 @@ class AsusNode {
     std::string subscribe_topic_depth;
     std::string subscribe_topic_color;
 		
-		rosbag::Bag bag;
-		
-    public:
+    rosbag::Bag bag;
+    ros::Time startTime;
+public:
     AsusNode() {
 
 	nh_ = ros::NodeHandle("~");
 	n_ = ros::NodeHandle();
-	bag.open("report.bag", rosbag::bagmode::Write);
+        std::string name;
+        nh_.getParam("NAME", name);
+        std::string fileName = "report" + name + ".bag";
+	bag.open(fileName, rosbag::bagmode::Write);
 	
 	//read in topic names from the parameter server
 	nh_.param<std::string>("points_topic",subscribe_topic_point,"/camera/depth_registered/points");
@@ -107,6 +110,7 @@ class AsusNode {
 	cv::namedWindow(RGB_WINDOW);
 	cv::namedWindow(DEPTH_WINDOW);
 	cv::namedWindow(DEPTH_WINDOW_CENTER);
+        startTime = ros::Time::now();
     }
 
     // Callback for pointclouds
@@ -207,7 +211,8 @@ class AsusNode {
 //main function
 int main(int argc, char **argv) {
     ros::init(argc, argv, "asus_node");
-
+    
+    
     std::cerr<<"creating node\n";
     AsusNode nd;
     std::cerr<<"node done\n";
