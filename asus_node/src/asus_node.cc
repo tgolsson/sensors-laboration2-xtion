@@ -62,8 +62,8 @@
 #define DEPTH_WINDOW_CENTER "Depth Image Center"
 #define X_COUNT 640
 #define Y_COUNT 480
-#define X_SIZE 20
-#define Y_SIZE 20
+#define X_SIZE 40
+#define Y_SIZE 40
 
 //Your Node Class
 class AsusNode {
@@ -84,15 +84,22 @@ class AsusNode {
     std::string subscribe_topic_depth;
     std::string subscribe_topic_color;
 		
-		rosbag::Bag bag;
-		
-    public:
+    rosbag::Bag bag;
+
+
+public:
+    int stopCounter;
+
     AsusNode() {
 
 	nh_ = ros::NodeHandle("~");
 	n_ = ros::NodeHandle();
-	bag.open("report.bag", rosbag::bagmode::Write);
-	
+        std::string name;
+        nh_.getParam("NAME", name);
+        std::string fileName = "report" + name + ".bag";
+	bag.open(fileName, rosbag::bagmode::Write);
+
+        stopCounter = 0;
 	//read in topic names from the parameter server
 	nh_.param<std::string>("points_topic",subscribe_topic_point,"/camera/depth_registered/points");
 	nh_.param<std::string>("depth_topic",subscribe_topic_depth,"/camera/depth_registered/image_raw");
@@ -145,12 +152,13 @@ class AsusNode {
     //callback for RGB images
     void depthCallback(const sensor_msgs::Image::ConstPtr& msg)
     {
+        stopCounter = 0;
 	cv_bridge::CvImageConstPtr bridge;
 	try
 	{
 	    bridge = cv_bridge::toCvCopy(msg, "32FC1");
-	    cv::FileStorage fs("rgbdepth.yml", cv::FileStorage::WRITE);
-	    fs << "imagedepth" << bridge->image;
+	    // cv::FileStorage fs("rgbdepth.yml", cv::FileStorage::WRITE);
+	    // fs << "imagedepth" << bridge->image;
 	}
 	catch (cv_bridge::Exception& e)
 	{
@@ -158,7 +166,7 @@ class AsusNode {
 	    return;
 	}
 	/* do something depthy"*/
-	cv::imshow(DEPTH_WINDOW, bridge->image);
+	// cv::imshow(DEPTH_WINDOW, bridge->image);
 	cv::waitKey(1);
 	
 	/* depth center"*/
@@ -181,38 +189,43 @@ class AsusNode {
         float mean = 0;
         float stdDev = 0;
         if (values.size() == 0) {
-        	mean = 0;
-        	stdDev = 0;
+            mean = 0;
+            stdDev = 0;
         } else {
-					mean = sum / (float)values.size();
-		      float varianceSum = 0;
-		      for (std::vector<float>::iterator it = values.begin(); it != values.end(); it++)
-		      {
-		          varianceSum = pow(*it - mean, 2);
-		      }
-        	stdDev = varianceSum / (float) values.size();
+            mean = sum / (float)values.size();
+            float varianceSum = 0;
+            for (std::vector<float>::iterator it = values.begin(); it != values.end(); it++)
+            {
+                variancemSum = pow(*it - mean, 2);
+            }
+            stdDev = varianceSum / (float) values.size();
         }
 	ROS_INFO_STREAM("MEAN:"<<mean);
 	ROS_INFO_STREAM("STD:"<< stdDev);	
 	std_msgs::Float32 meanMsg, stdDevMsg;
 	meanMsg.data = mean;
 	stdDevMsg.data = stdDev;
-	bag.write("image", ros::Time::now(), msg);
 	bag.write("mean", ros::Time::now(), meanMsg);
 	bag.write("stddev", ros::Time::now(), stdDevMsg);
     }
-
+    
 };
 
 //main function
 int main(int argc, char **argv) {
     ros::init(argc, argv, "asus_node");
-
+    
+    
     std::cerr<<"creating node\n";
     AsusNode nd;
+    ros::Rate r(10); 
+    while (nd.stopCounter < 15)
+    {
+        nd.stopCounter++; 
+        ros::spinOnce();
+        r.sleep();
+    }
     std::cerr<<"node done\n";
-    ros::spin();
-
     return 0;
 }
 

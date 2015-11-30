@@ -8,7 +8,6 @@
 
 
 
-
 ##############################
 ########## FOR LATEX #########
 ##############################
@@ -159,3 +158,9 @@ pythontex-files-*/
 # endfloat
 *.ttt
 *.fff
+bags/depth100cm.bag
+bags/depth50cm.bag
+bags/depth200cm.bag
+bags/depth70cm.bag
+bags/depth150cm.bag
+bags/depth300cm.bag
