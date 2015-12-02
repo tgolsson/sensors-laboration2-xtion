@@ -62,8 +62,8 @@
 #define DEPTH_WINDOW_CENTER "Depth Image Center"
 #define X_COUNT 640
 #define Y_COUNT 480
-#define X_SIZE 40
-#define Y_SIZE 40
+#define X_SIZE 20
+#define Y_SIZE 20
 
 //Your Node Class
 class AsusNode {
@@ -196,7 +196,7 @@ public:
             float varianceSum = 0;
             for (std::vector<float>::iterator it = values.begin(); it != values.end(); it++)
             {
-                variancemSum = pow(*it - mean, 2);
+                varianceSum = pow(*it - mean, 2);
             }
             stdDev = varianceSum / (float) values.size();
         }
@@ -218,7 +218,7 @@ int main(int argc, char **argv) {
     
     std::cerr<<"creating node\n";
     AsusNode nd;
-    ros::Rate r(10); 
+    ros::Rate r(30); 
     while (nd.stopCounter < 15)
     {
         nd.stopCounter++; 
