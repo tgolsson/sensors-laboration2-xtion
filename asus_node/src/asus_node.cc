@@ -94,16 +94,21 @@ private:
     int buffPoint, numElements;
 		
 public:
+    int stopCounter;
+
     AsusNode() {
 
 	nh_ = ros::NodeHandle("~");
 	n_ = ros::NodeHandle();
+
 	bag.open("report.bag", rosbag::bagmode::Write);
 	buffPoint = numElements = 0;
 	for (int i=0; i<10; i++){
             buffer[i].create(20,20, CV_32F);
             //cv::Mat(20,20, CV_32F, 0);
 	}
+
+        stopCounter = 0;
 //	read in topic names from the parameter server
 	nh_.param<std::string>("points_topic",subscribe_topic_point,"/camera/depth_registered/points");
 	nh_.param<std::string>("depth_topic",subscribe_topic_depth,"/camera/depth_registered/image_raw");
@@ -160,23 +165,23 @@ public:
         }
 
     //callback for RGB images
-    void depthCallback(const sensor_msgs::Image::ConstPtr& msg)        {
-        ROS_INFO_STREAM("Entering depth callback");
+    void depthCallback(const sensor_msgs::Image::ConstPtr& msg)
+    {
+        stopCounter = 0;
         cv_bridge::CvImageConstPtr bridge;
-        
-        try{
+	try
+	{
             bridge = cv_bridge::toCvCopy(msg, "32FC1");
-            cv::FileStorage fs("rgbdepth.yml", cv::FileStorage::WRITE);
-            fs << "imagedepth" << bridge->image;
+	    // cv::FileStorage fs("rgbdepth.yml", cv::FileStorage::WRITE);
+	    // fs << "imagedepth" << bridge->image;
         }
         catch (cv_bridge::Exception& e)
         {
             ROS_ERROR("Failed to transform depth image.");
             return;
         }
-        
         /* do something depthy"*/
-        cv::imshow(DEPTH_WINDOW, bridge->image);
+	// cv::imshow(DEPTH_WINDOW, bridge->image);
         cv::waitKey(1);
 	
         /* depth center"*/
@@ -282,21 +287,25 @@ public:
         bag.write("image", ros::Time::now(), msg);
         bag.write("mean", ros::Time::now(), meanMsg);
         bag.write("stddev", ros::Time::now(), stdDevMsg);
-        ROS_INFO_STREAM("Finished with depth callback");
-
     }
-
+    
 };
 
 //main function
 int main(int argc, char **argv) {
     ros::init(argc, argv, "asus_node");
-
+    
+    
     std::cerr<<"creating node\n";
     AsusNode nd;
+    ros::Rate r(30); 
+    while (nd.stopCounter < 15)
+    {
+        nd.stopCounter++; 
+        ros::spinOnce();
+        r.sleep();
+    }
     std::cerr<<"node done\n";
-    ros::spin();
-
     return 0;
 }
 
