@@ -1,51 +1,59 @@
 close all; clear all; clc;
 it = 1;
-append = "60x60";
-for i = [50 100 150 200 300]
-  i2 = num2str(i);
-  load(strcat("mean", i2, "cm", append, ".txt"));
+append = "20x20";
+for i = [50]
+  for filter = {"", "G", "B", "M", "tM", "tA"}
+    i2 = num2str(i);
+    load(strcat("mean", filter{1,1}, i2, "cm", append, ".txt"));
 
-  eval(strcat("mean", i2, "cm", " = ","mean", i2, "cm", append, ";")); 
-  load( strcat("stddev", i2, "cm", append, ".txt"));
-  genvarname(strcat("stddev", i2, "cm")); 
-  eval(strcat("stddev", i2, "cm", " = ", "stddev", i2, "cm", append, ";"));
-  
+    eval(strcat("mean", filter{1,1}, i2, "cm", " = ","mean",  filter{1,1},i2, "cm", append, ";")); 
+    load( strcat("stddev",  filter{1,1},i2, "cm", append, ".txt"));
+    genvarname(strcat("stddev",  filter{1,1},i2, "cm")); 
+    eval(strcat("stddev",  filter{1,1},i2, "cm", " = ", "stddev",  filter{1,1}, i2, "cm", append, ";"));
+  endfor
 endfor
 
+colors = ["rgbkcm"]
 figure; 
-subplot(2,3, 1);hold on;
+subplot(1,2, 1);hold on;
 title("Mean error");
-mLength = min([length(mean50cm), length(mean100cm), length(mean150cm), length(mean200cm), length(mean300cm)]);
-X = 1:mLength;
-plot(X, mean50cm(1:mLength)-.5, "r-", 'linewidth', 2);
-plot(X, mean100cm(1:mLength)-1, "g-", 'linewidth', 2);
-plot(X, mean150cm(1:mLength)-1.5, "b-", 'linewidth', 2);
-plot(X, mean200cm(1:mLength)-2, "k-", 'linewidth', 2);
-plot(X, mean300cm(1:mLength)-3, "c-", 'linewidth', 2);
 
+mLength = min([length(mean50cm), length(meanG50cm), length(meanB50cm), length(meanM50cm), length(meantM50cm) length(meantA50cm)]);
 
-legend("50cm", "100cm", "150cm", "200cm", "300cm", "location", "southoutside","orientation", "horizontal");
+filter = {"", "G", "B", "M", "tM", "tA"}
+for i = 1:6
+    X = 1:mLength;
+    plot(X, eval(strcat("mean", filter{1,i}, "50cm(1:mLength)-.5")), strcat(colors(i),"-"), 'linewidth', 2);
+endfor
+
+legend("Original", "Gaussian", "Bilateral", "Median", "Temporal Median", "Temporal Mean", "location", "southoutside","orientation", "horizontal");
 legend("boxoff");
 xlabel("Sample");
 ylabel("Error");
 
 
-subplot(2,3,2);hold on;
+subplot(1,2,2);hold on;
 title("Variance"); 
-plot(X, stddev50cm(1:mLength), "r-",'linewidth', 2);
-plot(X, stddev100cm(1:mLength),"g-",'linewidth', 2);
-plot(X, stddev150cm(1:mLength), "b-", 'linewidth', 2);
-plot(X, stddev200cm(1:mLength), "k-", 'linewidth', 2);
-plot(X, stddev300cm(1:mLength), "c-", 'linewidth', 2);
-legend("50cm", "100cm", "150cm", "200cm", "300cm", "location", "southoutside","orientation", "horizontal");
+for i = 1:6
+    X = 1:mLength;
+    plot(X, eval(strcat("stddev", filter{i,1}, "50cm(1:mLength)-.5")), strcat(colors(i),"-"), 'linewidth', 2);
+endfor
+
+legend("Original", "Gaussian", "Bilateral", "Median", "Temporal Median", "Temporal Mean", "location", "southoutside","orientation", "horizontal");
 legend("boxoff")
 xlabel("Sample");
 ylabel("Variance");
 
+return;
 subplot(2,3,3); hold on;
 title("By distance");
-means = [mean(mean50cm-.5) mean(mean100cm-1) mean(mean150cm-1.5) mean(mean200cm-2) mean(mean300cm-3)];
-stddevs = [mean(stddev50cm) mean(stddev100cm) mean(stddev150cm) mean(stddev200cm) mean(stddev300cm)];
+means = zeros(1,6);
+stddevs = zeros(1,6);
+for i = 1:6
+  means = [means mean(eval(strcat("mean", filter{i,1}, "50cm")))];
+  stddevs = [stddevs mean(eval(strcat("stddev", filter{i,1}, "50cm")))];
+endfor
+
 distances = [50 100 150 200 300];
 [ax, h1, h2] = plotyy(distances, means, distances, stddevs);
 set(h1,  "linewidth", 2)
