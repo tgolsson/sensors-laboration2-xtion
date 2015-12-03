@@ -51,7 +51,24 @@ Instead of using RVIZ to view the data as before, a custom ROS-node can be used.
 \subsection{Camera calibration}
   \lstinputlisting[language=yaml]{camera.yaml} 
 % TODO: Marek : Calibration file & process
-\subsection{Noise characterization}
+  \subsection{Noise characterization}
+  \begin{figure}[ht]
+    \centering
+    \includegraphics[width=1\textwidth]{figures/20x20-plot.png}
+    \captionof{figure}[Mean and variance: 20x20 window]{\label{fig:20x20} The error and variance for a 20x20 pixel window at the center.}
+  \end{figure}
+  \begin{figure}[ht]
+    \centering
+    \includegraphics[width=1\textwidth]{figures/plot40x40.png}
+    \captionof{figure}[Mean and variance: 40x40 window]{\label{fig:40x40} The error and variance for a 40x40 pixel window at the center.}
+  \end{figure}
+  \begin{figure}[ht]
+    \centering
+    \includegraphics[width=1\textwidth]{figures/plotwindowsizes.png}
+    
+    \captionof{figure}[Mean and variance: 50cm, varied window sizes]{\label{fig:variedwindow} The error and variance at 50cm for various window sizes.}
+  \end{figure}
+
 % TODO: Tom : Show plots; Measuring setup;
 % TODO: Both : Analysis of plots
 \subsection{Noise filtering}

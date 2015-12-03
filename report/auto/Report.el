@@ -15,6 +15,10 @@
     "preamble"
     "article"
     "art11")
+   (LaTeX-add-labels
+    "fig:20x20"
+    "fig:40x40"
+    "fig:variedwindow")
    (LaTeX-add-bibliographies
     "References")))
 
