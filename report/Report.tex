@@ -31,8 +31,10 @@ A common problem in any type of sensing is the introduction of noise into the sy
 There are many approaches to reduce noise. Proper calibration and good testing environments is a good start, but this can only reduce external noise. Internal noise of the sensor needs to be analyzed and minimized on a much lower-level such as by using specially constructed algorithms. For sensors, that generate some sort of sequence one very naive (but nonetheless effective) approach is the use of smoothing. \par
 
 \section{Implementation}
-This exercise details the usage of calibration and smoothing for a RGBD-camera inside ROS.
+The purpose of this exercise is to calibrate an RGBD-camera and investigate its characteristics. Then, several smoothing algorithms shall be evaluated for the depth data.
 \subsection{Hardware and environment}
+This exercise was performed using an \emph{ASUS Xtion Pro}. The camera was connected over \emph{USB2} to a laptop running Linux kernel 4.2.5. The communication to the camera is done using the \emph{Robot Operating System} [ROS] version \emph{Indigo Igloo}. All packages used are compiled directly from GitHub development branch for Indigo Igloo. \par
+Other software used includes the OpenCV libraries, version 2.4.12.2-1.
 % TODO: Tom
 \subsection{Task 1}
 % TODO: Marek : Screenshots, short introduction
