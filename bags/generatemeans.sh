@@ -10,13 +10,13 @@ for sz in "50" "100" "150" "200" "300"; do
     (rosrun asus_node asus_node &);
 
 
-    sleep 12;
+    sleep 14;
 
     (rosbag play report.bag &) ; 
     (rostopic echo /mean > "mean${FILENAME}cm${APPEND}.txt" &) 
     (rostopic echo /stddev > "stddev${FILENAME}cm${APPEND}.txt" &)
 
-    sleep 12;
+    sleep 14;
 
     killall rostopic;
 

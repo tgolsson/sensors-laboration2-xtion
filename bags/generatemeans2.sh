@@ -2,7 +2,7 @@
 source ~/catkin_ws/devel/setup.bash
 
 APPEND=$1
-for sz in "50" "100" "150" "200" "300"; do
+for sz in "50" "100" ; do #"150" "200" "300"
     
     FILENAME=$sz;
     (rosbag play "depth${FILENAME}cm.bag" &);

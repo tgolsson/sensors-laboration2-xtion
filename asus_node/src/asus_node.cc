@@ -62,13 +62,10 @@
 #define RGB_WINDOW "RGB Image"
 #define DEPTH_WINDOW "Depth Image"
 #define DEPTH_WINDOW_CENTER "Depth Image Center"
-#define GAUSSIAN "Gaussian blurred"
-#define MEDIAN "Median blurred"
-#define BILATERAL "Bilateral blurred"
 #define X_COUNT 640
 #define Y_COUNT 480
-#define X_SIZE 20
-#define Y_SIZE 20
+#define X_SIZE 80
+#define Y_SIZE 80
 
 //Your Node Class
 class AsusNode {
@@ -92,7 +89,37 @@ private:
     rosbag::Bag bag;
     cv::Mat buffer[10];
     int buffPoint, numElements;
-		
+
+
+    void calculateMeanStddev(cv::Mat matrix, float * meanOut, float * stdDevout)
+        {
+            std::vector<float> values;
+            float sum, tempMean, tempStddev;
+            sum = tempMean = tempStddev = 0;
+            for (cv::MatConstIterator_<float> it = matrix.begin<float>(); it != matrix.end<float>(); it++)
+            {
+                if (*it != 0 && *it < 100)
+                {
+                    sum += *it;
+                    values.push_back(*it);
+                }
+            }
+
+            if (values.size() == 0) {
+                tempMean = 0;
+                tempStddev = 0;
+            } else {
+                tempMean = sum / (float)values.size();
+                float varianceSum = 0;
+                for (std::vector<float>::iterator it = values.begin(); it != values.end(); it++)            {
+                    varianceSum = pow(*it - tempMean, 2);
+                }
+                tempStddev = varianceSum / (float) values.size();
+            }
+            *meanOut = tempMean;
+            *stdDevout = tempStddev;
+        }
+   
 public:
     int stopCounter;
 
@@ -105,10 +132,10 @@ public:
 	buffPoint = numElements = 0;
 	for (int i=0; i<10; i++){
             buffer[i].create(X_SIZE, Y_SIZE, CV_32F);
-            //cv::Mat(20,20, CV_32F, 0);
 	}
 
         stopCounter = 0;
+        
 //	read in topic names from the parameter server
 	nh_.param<std::string>("points_topic",subscribe_topic_point,"/camera/depth_registered/points");
 	nh_.param<std::string>("depth_topic",subscribe_topic_depth,"/camera/depth_registered/image_raw");
@@ -123,9 +150,6 @@ public:
 	cv::namedWindow(RGB_WINDOW);
 	cv::namedWindow(DEPTH_WINDOW);
 	cv::namedWindow(DEPTH_WINDOW_CENTER);
-	// cv::namedWindow(GAUSSIAN);
-	// cv::namedWindow(MEDIAN);
-	// cv::namedWindow(BILATERAL);
 
         ROS_INFO_STREAM("Finished with constructor");
 
@@ -165,314 +189,151 @@ public:
         }
 
     //callback for RGB images
-    void depthCallback(const sensor_msgs::Image::ConstPtr& msg)
-        {
-            stopCounter = 0;
-            cv_bridge::CvImageConstPtr bridge;
-            try
-            {
-                bridge = cv_bridge::toCvCopy(msg, "32FC1");
-                // cv::FileStorage fs("rgbdepth.yml", cv::FileStorage::WRITE);
-                // fs << "imagedepth" << bridge->image;
-            }
-            catch (cv_bridge::Exception& e)
-            {
-                ROS_ERROR("Failed to transform depth image.");
-                return;
-            }
-            /* do something depthy"*/
-            // cv::imshow(DEPTH_WINDOW, bridge->image);
-            cv::waitKey(1);
-	
-            /* depth center"*/
-	
-            cv::Mat submatrix = bridge->image(cv::Range(Y_COUNT/2-Y_SIZE/2, Y_COUNT/2+Y_SIZE/2), cv::Range(X_COUNT/2-X_SIZE/2, X_COUNT/2+X_SIZE/2));
-        
-        
-            cv::Mat gaussian, median, bilateral;
-
-            cv::GaussianBlur(submatrix, gaussian, cv::Size(5,5), 0,0);
-            cv::medianBlur(submatrix, median, 5);
-            for (int x = 0; x < X_SIZE; x++)
-            {
-                for (int y=0; y < Y_SIZE; y++) {
-                    if (std::isnan(submatrix.at<float>(x,y)))
-                    {
-                        submatrix.at<float>(x,y) = 100;
-                    }
-                }
-            }
-
-            cv::bilateralFilter(submatrix, bilateral, 5, 5*2, 5/2);
-            // cv::imshow(BILATERAL, bilateral);
-            // cv::imshow(MEDIAN, median);
-            // cv::imshow(GAUSSIAN, gaussian);
-
-
-            // cv::imshow(DEPTH_WINDOW_CENTER, submatrix);
-            cv::waitKey(1);
-	
-
-            buffer[buffPoint] = submatrix;
-            buffPoint = (buffPoint + 1) % 10;
-        
-            if (numElements < 10)
-            {
-                numElements++;
-            }
-            cv::Mat outputM(X_SIZE,Y_SIZE,CV_32F);
-            cv::Mat outputA(X_SIZE,Y_SIZE,CV_32F);
-            if (numElements > 1)
-            {
-                for (int y=0; y < Y_SIZE;y++)
-                { 
-                    for (int x = 0; x  < X_SIZE;  x++)
-                    {
-                    
-                        std::vector<float> numbers;
-                        for (int i=0; i<numElements; i++) {
-                            numbers.push_back(buffer[i].at<float>(x,y));
-                        }
-                        std::sort(numbers->begin(), numbers->end());
-                        if (numbers.size() % 2 == 0)
-                        {
-                            outputM.at<float>(x,y) = (numbers.at[(int)numElements/2-1]+numbers[(int)numElements/2])/2.0f;
-                        }
-                        else
-                        {
-                            outputM.at<float>(x,y) = numbers[(int)numElements/2];
-                        }
-                        float sum = 0;
-                        for (int i=0; i<numElements; i++) {
-                            sum += buffer[i].at<float>(x,y);
-        
-                        }
-                        outputA.at<float>(x,y) = sum/(float) numElements;
-                    }
-                }
-            }
-        
-//        cv::imshow(GAUSSIAN, output);
-
-
-            std::vector<float> values;
-            float sum = 0;
-            for (cv::MatConstIterator_<float> it = submatrix.begin<float>(); it != submatrix.end<float>(); it++)
-            {
-                if (*it < 100)
-                {
-                    sum += *it;
-                    values.push_back(*it);
-                }
-            }
-        
-
-
-            float mean = 0;
-            float stdDev = 0;
-            if (values.size() == 0) {
-                mean = 0;
-                stdDev = 0;
-            } else {
-                mean = sum / (float)values.size();
-                float varianceSum = 0;
-                for (std::vector<float>::iterator it = values.begin(); it != values.end(); it++)            {
-                    varianceSum = pow(*it - mean, 2);
-                }
-                stdDev = varianceSum / (float) values.size();
-            }
-
-
-        
-            std_msgs::Float32 meanMsg, stdDevMsg;
-            std_msgs::Float32 meanMsgG, stdDevMsgG;
-            std_msgs::Float32 meanMsgM, stdDevMsgM;
-            std_msgs::Float32 meanMsgB, stdDevMsgB;
-            std_msgs::Float32 meanMsgtM, stdDevMsgtM;
-            std_msgs::Float32 meanMsgtA, stdDevMsgtA;
-
-        
-            meanMsg.data = mean;
-            stdDevMsg.data = stdDev;
-
-            // cv::Mat temp, temp2;
-            // float tempMean;
-            // float tempStddev;
-
-            // tempMean = cv::mean(gaussian)[0];
-            // temp = gaussian - tempMean; 
-            // cv::pow(temp, 2, temp2);
-            // tempStddev = cv::mean(temp2)[0];
-
-            float tempMean = 0;
-            float tempStddev = 0;
-            values.clear();
-            sum = 0;
-            cv::Mat MATRIX = gaussian;
-            for (cv::MatConstIterator_<float> it = MATRIX.begin<float>(); it != MATRIX.end<float>(); it++)
-            {
-                if (*it < 100)
-                {
-                    sum += *it;
-                    values.push_back(*it);
-                }
-            }
-
-            if (values.size() == 0) {
-                tempMean = 0;
-                tempStddev = 0;
-            } else {
-                tempMean = sum / (float)values.size();
-                float varianceSum = 0;
-                for (std::vector<float>::iterator it = values.begin(); it != values.end(); it++)            {
-                    varianceSum = pow(*it - tempMean, 2);
-                }
-                tempStddev = varianceSum / (float) values.size();
-            }
-
-            meanMsgG.data = tempMean;
-            stdDevMsgG.data = tempStddev;
-
-            values.clear();
-            sum = 0;
-             MATRIX = median;
-            for (cv::MatConstIterator_<float> it = MATRIX.begin<float>(); it != MATRIX.end<float>(); it++)
-            {
-                if (*it < 100)
-                {
-                    sum += *it;
-                    values.push_back(*it);
-                }
-            }
-
-            if (values.size() == 0) {
-                tempMean = 0;
-                tempStddev = 0;
-            } else {
-                tempMean = sum / (float)values.size();
-                float varianceSum = 0;
-                for (std::vector<float>::iterator it = values.begin(); it != values.end(); it++)            {
-                    varianceSum = pow(*it - tempMean, 2);
-                }
-                tempStddev = varianceSum / (float) values.size();
-            }
-
-            
-            meanMsgM.data = tempMean;
-            stdDevMsgM.data = tempStddev            ;
-
-            
-            values.clear();
-            sum = 0;
-             MATRIX = bilateral;
-            for (cv::MatConstIterator_<float> it = MATRIX.begin<float>(); it != MATRIX.end<float>(); it++)
-            {
-                if (*it < 100)
-                {
-                    sum += *it;
-                    values.push_back(*it);
-                }
-            }
-
-            if (values.size() == 0) {
-                tempMean = 0;
-                tempStddev = 0;
-            } else {
-                tempMean = sum / (float)values.size();
-                float varianceSum = 0;
-                for (std::vector<float>::iterator it = values.begin(); it != values.end(); it++)            {
-                    varianceSum = pow(*it - tempMean, 2);
-                }
-                tempStddev = varianceSum / (float) values.size();
-            }
-
-            
-
-            meanMsgB.data = tempMean;
-            stdDevMsgB.data = tempStddev;
-
-            
-
-            values.clear();
-            sum = 0;
-MATRIX = outputM;
-            for (cv::MatConstIterator_<float> it = MATRIX.begin<float>(); it != MATRIX.end<float>(); it++)
-            {
-                if (*it < 100)
-                {
-                    sum += *it;
-                    values.push_back(*it);
-                }
-            }
-
-            if (values.size() == 0) {
-                tempMean = 0;
-                tempStddev = 0;
-            } else {
-                tempMean = sum / (float)values.size();
-                float varianceSum = 0;
-                for (std::vector<float>::iterator it = values.begin(); it != values.end(); it++)            {
-                    varianceSum = pow(*it - tempMean, 2);
-                }
-                tempStddev = varianceSum / (float) values.size();
-            }
-
-            
-
-            meanMsgtM.data = tempMean;
-            stdDevMsgtM.data = tempStddev;
-
-
-
-            
-            values.clear();
-            sum = 0;
-            MATRIX = outputA;
-            for (cv::MatConstIterator_<float> it = MATRIX.begin<float>(); it != MATRIX.end<float>(); it++)
-            {
-                if (*it < 100)
-                {
-                    sum += *it;
-                    values.push_back(*it);
-                }
-            }
-
-            if (values.size() == 0) {
-                tempMean = 0;
-                tempStddev = 0;
-            } else {
-                tempMean = sum / (float)values.size();
-                float varianceSum = 0;
-                for (std::vector<float>::iterator it = values.begin(); it != values.end(); it++)            {
-                    varianceSum = pow(*it - tempMean, 2);
-                }
-                tempStddev = varianceSum / (float) values.size();
-            }
-
-            
-
-            meanMsgtA.data = tempMean;
-            stdDevMsgtA.data = tempStddev;
-
-            
-            
-            bag.write("mean", ros::Time::now(), meanMsg);
-            bag.write("meanG", ros::Time::now(), meanMsgG);
-            bag.write("meanB", ros::Time::now(), meanMsgB);
-            bag.write("meanM", ros::Time::now(), meanMsgM);
-            bag.write("meantM", ros::Time::now(), meanMsgtM);
-            bag.write("meantA", ros::Time::now(), meanMsgtA);
-        
-        
-            bag.write("stddev", ros::Time::now(), stdDevMsg);
-            bag.write("stddevG", ros::Time::now(), stdDevMsgG);
-            bag.write("stddevB", ros::Time::now(), stdDevMsgB);
-            bag.write("stddevM", ros::Time::now(), stdDevMsgM);
-            bag.write("stddevtM", ros::Time::now(), stdDevMsgtM);
-            bag.write("stddevtA", ros::Time::now(), stdDevMsgtA);
-        
-        
+    void depthCallback(const sensor_msgs::Image::ConstPtr& msg){
+        stopCounter = 0;
+        cv_bridge::CvImageConstPtr bridge;
+        try{
+            bridge = cv_bridge::toCvCopy(msg, "32FC1");
+            // cv::FileStorage fs("rgbdepth.yml", cv::FileStorage::WRITE);
+            // fs << "imagedepth" << bridge->image;
         }
+        catch (cv_bridge::Exception& e){
+            ROS_ERROR("Failed to transform depth image.");
+            return;
+        }
+        /* do something depthy"*/
+        cv::imshow(DEPTH_WINDOW, bridge->image);
+        cv::waitKey(1);
+	
+        /* depth center"*/
+        cv::Range dx = cv::Range(X_COUNT/2 - X_SIZE/2, X_COUNT/2 + X_SIZE/2);
+        cv::Range dy = cv::Range(Y_COUNT/2 - Y_SIZE/2, Y_COUNT/2 + Y_SIZE/2);
+        cv::Mat submatrix = bridge->image(dy, dx);
+        
+        
+        cv::Mat gaussian, median;
+        cv::GaussianBlur(submatrix, gaussian, cv::Size(5,5), 0,0);
+        cv::medianBlur(submatrix, median, 5);
+
+        cv::Mat mask;
+        mask.create(X_SIZE,Y_SIZE, CV_32F);
+        for (int x = 0; x < X_SIZE; x++){
+            for (int y=0; y < Y_SIZE; y++){
+                if (std::isnan(submatrix.at<float>(x,y))){
+                    mask.at<float>(x,y) = 0.0f;
+                    submatrix.at<float>(x,y) = 10000;
+                }
+                else{
+                    mask.at<float>(x,y) = 1.0f;
+                }
+            }
+        }
+
+        cv::Mat bilateral;
+        cv::bilateralFilter(submatrix, bilateral, 5, 5*2, 5/2);
+        cv::waitKey(1);
+	
+
+        cv::Mat outputM(X_SIZE,Y_SIZE,CV_32F, cv::Scalar(0.0f));
+        cv::Mat outputA(X_SIZE,Y_SIZE,CV_32F, cv::Scalar(0.0f));
+        
+        buffer[buffPoint] = submatrix;
+        buffPoint = (buffPoint + 1) % 10;
+        if (numElements < 10){
+            numElements++;
+        }
+        for (int y=0; y < Y_SIZE;y++){ 
+            for (int x = 0; x  < X_SIZE;  x++){
+                        
+                std::vector<float> numbers;
+                for (int i=0; i<numElements; i++) {
+                    float val = buffer[i].at<float>(x,y);
+                    if (!std::isnan(val) && val < 10 && val != 0){
+                        numbers.push_back(val);
+                    }
+                }
+                int length = numbers.size();
+                std::sort(numbers.begin(), numbers.end());
+                if (length > 1)
+                {
+                    if (numbers.size() % 2 == 0){
+                        outputM.at<float>(x,y) = (numbers[(int)length/2-1]+numbers[(int)length/2])/2.0f;
+                    }
+                    else{
+                        outputM.at<float>(x,y) = numbers[(int)length/2];
+                    }
+                    float sum = 0;
+                    for (int i=0; i<length; i++){
+                        sum += numbers[i];       
+                    }
+                    outputA.at<float>(x,y) = sum / (float)length;
+                }
+                else{
+                    outputA.at<float>(x,y) = 0;
+                    outputM.at<float>(x,y) = 0;
+                }
+            }
+        }
+        
+        
+            
+        cv::multiply(submatrix,mask, submatrix);
+        cv::multiply(bilateral,mask, bilateral);
+        cv::multiply(gaussian,mask, gaussian);
+        cv::multiply(median,mask, median);
+
+        cv::Mat gathered(X_SIZE*2+5, Y_SIZE*3+10, CV_32F, cv::Scalar(0.0f));
+        cv::Range r1(0, X_SIZE);
+        cv::Range r2(X_SIZE+5, X_SIZE*2+5);
+        cv::Range r3(X_SIZE*2+10, X_SIZE*3+10);
+        submatrix.copyTo(gathered.colRange(r1).rowRange(r1));
+        gaussian.copyTo(gathered.colRange(r2).rowRange(r1));
+        median.copyTo(gathered.colRange(r3).rowRange(r1));
+
+        bilateral.copyTo(gathered.colRange(r1).rowRange(r2));
+        outputA.copyTo(gathered.colRange(r2).rowRange(r2));
+        outputM.copyTo(gathered.colRange(r3).rowRange(r2));
+
+        cv::imshow(DEPTH_WINDOW_CENTER, gathered);
+        cv::waitKey(2);
+        std_msgs::Float32 meanMsg, stdDevMsg;
+        std_msgs::Float32 meanMsgG, stdDevMsgG;
+        std_msgs::Float32 meanMsgM, stdDevMsgM;
+        std_msgs::Float32 meanMsgB, stdDevMsgB;
+        std_msgs::Float32 meanMsgtM, stdDevMsgtM;
+        std_msgs::Float32 meanMsgtA, stdDevMsgtA;
+
+        
+
+        calculateMeanStddev(submatrix, &meanMsg.data,&stdDevMsg.data);
+
+        calculateMeanStddev(gaussian, &meanMsgG.data,&stdDevMsgG.data);
+        
+        calculateMeanStddev(bilateral, &meanMsgB.data,&stdDevMsgB.data);
+        
+        calculateMeanStddev(median, &meanMsgM.data,&stdDevMsgM.data);
+        
+        calculateMeanStddev(outputA, &meanMsgtA.data,&stdDevMsgtA.data);
+        
+        calculateMeanStddev(outputM, &meanMsgtM.data,&stdDevMsgtM.data);
+
+        bag.write("mean", ros::Time::now(), meanMsg);
+        bag.write("meanG", ros::Time::now(), meanMsgG);
+        bag.write("meanB", ros::Time::now(), meanMsgB);
+        bag.write("meanM", ros::Time::now(), meanMsgM);
+        bag.write("meantM", ros::Time::now(), meanMsgtM);
+        bag.write("meantA", ros::Time::now(), meanMsgtA);
+        
+        
+        bag.write("stddev", ros::Time::now(), stdDevMsg);
+        bag.write("stddevG", ros::Time::now(), stdDevMsgG);
+        bag.write("stddevB", ros::Time::now(), stdDevMsgB);
+        bag.write("stddevM", ros::Time::now(), stdDevMsgM);
+        bag.write("stddevtM", ros::Time::now(), stdDevMsgtM);
+        bag.write("stddevtA", ros::Time::now(), stdDevMsgtA);
+        
+        
+    }
     
 };
 
