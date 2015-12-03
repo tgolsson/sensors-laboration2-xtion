@@ -25,6 +25,7 @@
     "amsmath"
     "commath"
     "mathtools"
+    "hyperref"
     "url")
    (TeX-add-symbols
     '("di" 2))
