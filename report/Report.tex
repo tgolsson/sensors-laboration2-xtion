@@ -13,6 +13,7 @@
 \begin{center}
   \emph{All code for this exercise can be found at \\ \url{https://github.com/tgolsson/sensors-laboration2-xtion}}
 \end{center}
+\tableofcontents
 \lstlistoflistings % List of all code snippets
 \listoffigures % List of all figures
 \listoftables
@@ -36,16 +37,24 @@ The purpose of this exercise is to calibrate an RGBD-camera and investigate its 
 This exercise was performed using an \emph{ASUS Xtion Pro}. The camera was connected over \emph{USB2} to a laptop running Linux kernel 4.2.5. The communication to the camera is done using the \emph{Robot Operating System} [ROS] version \emph{Indigo Igloo}. All packages used are compiled directly from GitHub development branch for Indigo Igloo. \par
 Other software used includes the OpenCV libraries, version 2.4.12.2-1.
 % TODO: Tom
-\subsection{Task 1}
+\subsection{Camera setup}
 % TODO: Marek : Screenshots, short introduction
-\subsection{Task 2}
+\subsection{ROS setup}
+Instead of using RVIZ to view the data as before, a custom ROS-node can be used. As there are three types of data - color image, depth image, and pointcloud, there are three listeners setup to receive this data. An example of the data on these topics can be found in the embedded files below. \par
+
+\begin{center}
+  \attachfile[color=0 0 0,icon=Paperclip]{pcloud.pcd}{{  }Pointcloud file}{   }
+  \attachfile[color=0 0 0,icon=Paperclip]{rgbbmp.yml}{{  }RGB-image file}
+\end{center}
+%\attachfile{depthimage.yml}{Depth-image file}
 % TODO: Tom : Sample files, point cloud & images
-\subsection{Task 3}
+\subsection{Camera calibration}
+  \lstinputlisting[language=yaml]{camera.yaml} 
 % TODO: Marek : Calibration file & process
-\subsection{Task 4}
+\subsection{Noise characterization}
 % TODO: Tom : Show plots; Measuring setup;
 % TODO: Both : Analysis of plots
-\subsection{Task 5}
+\subsection{Noise filtering}
 % TODO: Tom : Implementation, challenges (NAAAN), push code with visible images
 % TODO: Marek : Target scene (point 3)
 % TODO: Both : Analysis

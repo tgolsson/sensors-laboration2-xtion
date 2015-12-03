@@ -160,7 +160,7 @@ public:
         {
             pcl::PointCloud<pcl::PointXYZ> cloud;
             pcl::fromROSMsg (*msg_in, cloud);
-            //pcl::io::savePCDFileASCII ("pcloud.pcd", cloud);
+            pcl::io::savePCDFileASCII ("pcloud.pcd", cloud);
 		
             /* do something pointy"*/
             ROS_INFO_STREAM("Got cloud with "<<cloud.size()<<" points");
@@ -174,8 +174,8 @@ public:
             try
             {
                 bridge = cv_bridge::toCvCopy(msg, "bgr8");
-                //cv::FileStorage fs("rgbbmp.yml", cv::FileStorage::WRITE);
-                //fs << "imagergb" << bridge->image;
+                cv::FileStorage fs("rgbbmp.yml", cv::FileStorage::WRITE);
+                fs << "imagergb" << bridge->image;
             }
             catch (cv_bridge::Exception& e)
             {
@@ -194,8 +194,8 @@ public:
         cv_bridge::CvImageConstPtr bridge;
         try{
             bridge = cv_bridge::toCvCopy(msg, "32FC1");
-            // cv::FileStorage fs("rgbdepth.yml", cv::FileStorage::WRITE);
-            // fs << "imagedepth" << bridge->image;
+            cv::FileStorage fs("rgbdepth.yml", cv::FileStorage::WRITE);
+            fs << "imagedepth" << bridge->image;
         }
         catch (cv_bridge::Exception& e){
             ROS_ERROR("Failed to transform depth image.");
