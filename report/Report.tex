@@ -114,7 +114,7 @@ In order to solve this issue, all NaN-values in the input are set to $10000$ bef
 Another solution we considered - but did not implement - was to use local median-filtering at each NaN. We deemed this to be a very computationally expensive process, but could possibly yield better results. \par
 % TODO: Tom : Implementation, challenges (NAAAN), push code with visible images
 % TODO: Marek : Target scene (point 3)
-We pointed the camera at the scene with the litle box in the middle and bigger box behind to be able to see clearly the edges. As we can see in the original image (\vref{fig:refimage}) there is a lot of noise and the edges are not clear as they should be. The used filters should smooth out the noise to be able to get better measurements. 
+We pointed the camera at the scene with the litle box in the middle and bigger box behind to be able to see clearly the edges. As we can see in the original image (\vref{fig:refimage}) there is a lot of noise and the edges are not clear as they should be. The used filters should smooth out the noise to be able to get better measurements. The resulting image \vref{fig:filterswindow} shows all applied filters. The first image is the original window 80x80px without any filters applied, just for the reference
 \begin{figure}[ht]
   \centering
   \includegraphics[width=1\textwidth]{figures/reference_rgb_depth.png}
@@ -124,7 +124,7 @@ We pointed the camera at the scene with the litle box in the middle and bigger b
   \centering
   \includegraphics[width=1\textwidth]{figures/applied_filters_center.png}
   
-  \captionof{figure}[Applied filters to 80x80 center window]{\label{fig:filterswindow} This image shows different filters applied to the center window}
+  \captionof{figure}[Applied filters to 80x80 center window]{\label{fig:filterswindow} This image shows different filters applied to the center of the window 80x80 px. From the top left corner - original image, gaussian, median, bilateral, temporal average, temporal median}
 \end{figure}
 % TODO: Both : Analysis
 
