@@ -19,7 +19,8 @@
     "tab:table1"
     "fig:20x20"
     "fig:40x40"
-    "fig:variedwindow")
+    "fig:variedwindow"
+    "fig:variedwindow2")
    (LaTeX-add-bibliographies
     "References")))
 
