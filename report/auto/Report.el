@@ -16,6 +16,7 @@
     "article"
     "art11")
    (LaTeX-add-labels
+    "tab:table1"
     "fig:20x20"
     "fig:40x40"
     "fig:variedwindow")
