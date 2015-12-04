@@ -20,33 +20,32 @@
 \lstset{ matchrangestart=t} %initialise the linerange-macro for \lstinput...
 \section{Theory and motivation}
 \subsection{RGBD-cameras}
-% TODO: RGBD, 
-
 RGBD-cameras, short for \emph{Red-Green-Blue-Depth}-camera, is a type of low-cost camera commonly used for robot vision. The concept became widely popular with the release of the Microsoft Kinect in late 2010. \par
 
-These cameras consist of two separate parts: one normal color-based camera, and one infra-red sensor with accompanying projector. The sensing consists of projecting a deterministic pattern onto the scene, and then unprojecting them by comparing to previously captured patterns at known depths. By interpolating through these patterns, a full depth-image is generated.  
+These cameras consist of two separate parts: one normal color-based camera, and one infra-red sensor with accompanying projector. The sensing consists of projecting a deterministic pattern onto the scene using an infrared emitter, and then unprojecting by comparing the image to previously captured patterns at known depths. By interpolating through these patterns, a full depth-image is generated.  
 \subsection{Noise}
-% TODO: Noise and smoothing; object identification
+
 A common problem in any type of sensing is the introduction of noise into the system. This noise can come from many sources, and be predictable or unpredictable. Examples of noise sources could be frequency hum from electric circuits, flickering lights, air pollution or pure inaccuracy. This noise can skew the results of sensors that make algorithm much more error prone. \par
 
-There are many approaches to reduce noise. Proper calibration and good testing environments is a good start, but this can only reduce external noise. Internal noise of the sensor needs to be analyzed and minimized on a much lower-level such as by using specially constructed algorithms. For sensors, that generate some sort of sequence one very naive (but nonetheless effective) approach is the use of smoothing. \par
+There are many approaches to reduce noise. Proper calibration and good testing environments is a good start, but this can only reduce external noise. Internal noise of the sensor needs to be analyzed and minimized on a much lower-level such as by using specially constructed algorithms. For sensors that generate some sort of sequence, one very naive (but nonetheless effective) approach is the use of smoothing. \par
 
 \section{Implementation}
-The purpose of this exercise is to calibrate an RGBD-camera and investigate its characteristics. Then, several smoothing algorithms shall be evaluated for the depth data.
+The purpose of this exercise is to calibrate an RGBD-camera and investigate its characteristics. Then, several smoothing algorithms shall be evaluated to reduce noise in the depth sensor.
 \subsection{Hardware and environment}
-This exercise was performed using an \emph{ASUS Xtion Pro}. The camera was connected over \emph{USB2} to a laptop running Linux kernel 4.2.5. The communication to the camera is done using the \emph{Robot Operating System} [ROS] version \emph{Indigo Igloo}. All packages used are compiled directly from GitHub development branch for Indigo Igloo. \par
+This exercise was performed using an \emph{ASUS Xtion Pro}. The camera was connected over \emph{USB2} to a laptop running Linux kernel 4.2.5. The communication to the camera is done using the \emph{Robot Operating System} [ROS] version \emph{Indigo Igloo}. All ROS packages used are compiled directly from GitHub development branch for Indigo Igloo. \par
 Other software used includes the OpenCV libraries, version 2.4.12.2-1.
 % TODO: Tom
 \subsection{Camera setup}
 % TODO: Marek : Screenshots, short introduction
 \subsection{ROS setup}
-Instead of using RVIZ to view the data as before, a custom ROS-node can be used. As there are three types of data - color image, depth image, and pointcloud, there are three listeners setup to receive this data. An example of the data on these topics can be found in the embedded files below. \par
+Instead of using RVIZ to view the data as before, a custom ROS-node can be used. As there are three types of data - color image, depth image, and pointcloud, there are three listeners setup to receive this data. An example of the data on these topics can be found in the embedded files below\footnote{If these embedded files do not work, such as if you use Adobe Acrobat, please download them from the \texttt{report} folder in the GitHub repository. Verified to work with Okular and Evince on Linux.}. \par
 
 \begin{center}
   \attachfile[color=0 0 0,icon=Paperclip]{pcloud.pcd}{{  }Pointcloud file}{   }
-  \attachfile[color=0 0 0,icon=Paperclip]{rgbbmp.yml}{{  }RGB-image file}
+  \attachfile[color=0 0 0,icon=Paperclip]{rgbbmp.yml}{{  }RGB-image file}{   }
+  % \attachfile[color=0 0 0, icon=Paperclip]{depthimage.yml}{Depth-image file}
 \end{center}
-%\attachfile{depthimage.yml}{Depth-image file}
+
 % TODO: Tom : Sample files, point cloud & images
 \subsection{Camera calibration}
   \lstinputlisting[language=yaml]{camera.yaml} 
