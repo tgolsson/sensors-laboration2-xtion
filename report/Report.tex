@@ -34,7 +34,6 @@ The purpose of this exercise is to calibrate an RGBD-camera and investigate its 
 \subsection{Hardware and environment}
 This exercise was performed using an \emph{ASUS Xtion Pro}. The camera was connected over \emph{USB2} to a laptop running Linux kernel 4.2.5. The communication to the camera is done using the \emph{Robot Operating System} [ROS] version \emph{Indigo Igloo}. All ROS packages used are compiled directly from GitHub development branch for Indigo Igloo. \par
 Other software used includes the OpenCV libraries, version 2.4.12.2-1.
-% TODO: Tom
 \subsection{Camera setup}
 % TODO: Marek : Screenshots, short introduction
 As a first step we had to install \emph{openmi2} package for the corresponding version of ROS. This package contains drivers for the Asus camera. After installing the package we connected the camera to the USB 2.0 port on the laptop. We made sure that our system can recognize the camera through command \emph{lsusb} and after that we run the openmi2 package using \emph{roslaunch openmi2_launch openmi2.launch}. During the first launch there was a warning about no calibration file found, but we didn't need it yet for the camera testing. After running openmi2 we run in the new terminal window command \emph{rosrun rviz rviz}, which we used for inspecting the topics where camera publishes its data. In the RVIZ window we need to set global option Fixed Frame to camera_link in order to see the camera data. We need to create several visualizations to see what camera publishes on each topic. There are 4 major types of topics with different subtopics that can be visualized using RVIZ. There'are topics for depth image, depth registered image, rgb image and ir image.  \par
@@ -56,7 +55,7 @@ As a first step we had to install \emph{openmi2} package for the corresponding v
   \end{tabular}
 \end{table}
 \subsection{ROS setup}
-Instead of using RVIZ to view the data as before, a custom ROS-node can be used. As there are three types of data - color image, depth image, and pointcloud, there are three listeners setup to receive this data. An example of the data on these topics can be found in the embedded files below\footnote{If these embedded files do not work, such as if you use Adobe Acrobat, please download them from the \texttt{report} folder in the GitHub repository. Verified to work with Okular and Evince on Linux.}. \par
+Instead of using RVIZ to view the data as before, a custom ROS-node can be used. As there are three types of data - color image, depth image, and pointcloud, there are three listeners setup to receive this data. An example of the data on these topics can be found in the embedded files below\footnote{If these embedded files do not work, such as if you use Adobe Acrobat, please download them from the \texttt{report} folder in the GitHub repository. Verified to work with Okular and Evince on Linux.}. The \texttt{depth image} and \texttt{color image} are stored in the OpenCV \texttt{y[a]ml} format, and the point cloud is stored in the \emph{Point Cloud Library} [PCL] \texttt{pcd} format.\par
 
 \begin{center}
   \attachfile[color=0 0 0,icon=Paperclip]{pcloud.pcd}{{  }Pointcloud file}{   }
@@ -64,43 +63,47 @@ Instead of using RVIZ to view the data as before, a custom ROS-node can be used.
   % \attachfile[color=0 0 0, icon=Paperclip]{depthimage.yml}{Depth-image file}
 \end{center}
 
-% TODO: Tom : Sample files, point cloud & images
 \subsection{Camera calibration}
-  \lstinputlisting[language=yaml]{camera.yaml} 
+\lstinputlisting[language=yaml]{camera.yaml} 
 % TODO: Marek : Calibration file & process
 	In this part we were supposed to calibrate the camera which requires to setup internal parameters. After that we should be able to get not distorted image from the camera and right distance measurement. \par
 	As a first step we had to install \emph{camera_calibration} package. After that we listed all topics where camera publishes its data and we choosed topic /camera/rgb/image_raw. Before running calibration process, we need to measure how many squares are in the checkerboard pattern and what is the length of one square. Using command \emph{rosrun camera_calibration cameracalibrator.py --size=6x10 --square=0.065 image:=/camera/rgb/image_raw camera:=/camera/rgb --approximate=0.1} we run the calibration application with correctly setup parameters according to our measurements of the calibrating pattern. In the calibration window we could see image from the selected topic with detection of the pattern. We set the camera to the paralel position with the ground and pointed it to the wall. After that we kept moving and tilting the pattern all over the camera field of view until X, Y and Size progressbar showed long line and button Calibrate light up. This process took up about 2 minutes until we got good results and Calibration button lighted up. We pressed the button and then waited for few minutes until the application was able to compute the right parameters for our camera. After that buttons Save and Upload lighted up. We saved the calibration file and tried to upload it to the camera firmware, but for some reason that function didn't worked properly and we had to set the calibration file as a parameter of the openmi2 package. The calibration file was saved into ost.txt file in the tmp directory and we needed to convert it to yaml file. In order to do that, we used command \emph{rosrun camera_calibration_parsers convert  ost.txt camera.yaml} which converted the calibration file into yaml file which we could use for the openmi2 package. \par
 	To check the calibration results we tried to point the camera at some straight lines (wall corners, table etc.) and checked if they got distorted around the edges. That showed that the straight lines stayed as a straight lines, so the calibration was successful. To verify if the calibration worked in the quantitative manner we run the code from the Task 4: Noise characterization, that measured average and standard deviation for the distance in the small window. Then we pointed the camera to the objects in different distances and checked if the mean of the distance is the same as the reality, which mostly was within the range of the camera. \par
 	
-  \subsection{Noise characterization}
-  The sensors used in the camera suffer from noise, and before being able to reduce it, measurements need to be made. First, 5 measurements of 10 seconds each were recorded with \texttt{rosbag}. The measurements were taken \emph{50}, \emph{100}, \emph{150}, \emph{200}, and \emph{300} cm from a white wall. The camera was placed on a table, so that the  camera normal was perpendicular to the wall. This ensures that all measurements are made against the same baseline. \par
 
+\subsection{Noise characterization}
+The sensors used in the camera suffer from noise, and the first requirement for improvement is to objectively quantify the error. First, 5 measurements of 10 seconds each were recorded with \texttt{rosbag}. The measurements were taken \emph{50}, \emph{100}, \emph{150}, \emph{200}, and \emph{300} cm from a white wall. The camera was placed on a table, so that the  camera normal was perpendicular to the wall. This ensures that all measurements are made against the same baseline. \par
+
+First, the errors were quantified at varying distance with set window sizes. Fig. \vref{fig:20x20} shows the error and variances for a 20x20 window, and fig. \vref{fig:40x40} shows the same for a 40x40 window. The most obvious pattern can be seen in the left-most plot in the two figures: there is a very strong correlation between distance and both variance and error. This has been shown by other researchers, and is logical: the further the distance, the more things can interfere with measurements such as light conditions, dust particles, and so on. \par
+
+Another interesting pattern is that the mean error barely changes between the two windows; however, a larger window reduces the variance significantly. This is not so much related to reduced errors, but a result of the definition of a variance. If the errors are assumed to adhere to some sort of distribution $X \in \left(-\infty, \infty \right)$, then $\sum_{X_1}^{X_\infty} = \bar{X}$, i.e., the static error. From this it follows that the variance will then also be the pure noise in the signal. However, if too few points are sampled the sum will only approximate the mean, and the variance will become unstable.
+
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=1\textwidth]{figures/20x20-plot.png}
+  \captionof{figure}[Mean and variance: 20x20 window]{\label{fig:20x20} The error and variance for a 20x20 pixel window at the center.}
+\end{figure}
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=1\textwidth]{figures/plot40x40.png}
+  \captionof{figure}[Mean and variance: 40x40 window]{\label{fig:40x40} The error and variance for a 40x40 pixel window at the center.}
+\end{figure}
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=1\textwidth]{figures/plotwindowsizes.png}
   
-  \begin{figure}[ht]
-    \centering
-    \includegraphics[width=1\textwidth]{figures/20x20-plot.png}
-    \captionof{figure}[Mean and variance: 20x20 window]{\label{fig:20x20} The error and variance for a 20x20 pixel window at the center.}
-  \end{figure}
-  \begin{figure}[ht]
-    \centering
-    \includegraphics[width=1\textwidth]{figures/plot40x40.png}
-    \captionof{figure}[Mean and variance: 40x40 window]{\label{fig:40x40} The error and variance for a 40x40 pixel window at the center.}
-  \end{figure}
-  \begin{figure}[ht]
-    \centering
-    \includegraphics[width=1\textwidth]{figures/plotwindowsizes.png}
-    
-    \captionof{figure}[Mean and variance: 50cm, varied window sizes]{\label{fig:variedwindow} The error and variance at 50cm for various window sizes.}
-  \end{figure}
+  \captionof{figure}[Mean and variance: 50cm, varied window sizes]{\label{fig:variedwindow} The error and variance at 50cm for various window sizes.}
+\end{figure}
 
 % TODO: Tom : Show plots; Measuring setup;
 % TODO: Both : Analysis of plots
-  \subsection{Noise filtering}
+\subsection{Noise filtering}
 
-  A large issue when implementing the filters was handling the large number of invalid values in the input. In some situations, a majority of the elements were NaN, which obviously makes it hard to draw any conclusions from the data. The \emph{gaussian} and \emph{median} filters from \textbf{OpenCV} work fine  without any modification. The bilateral filter however suffers a segmentation fault when there are NaN values in the input. \par
+A large issue when implementing the filters was handling the large number of invalid values in the input. In some situations, a majority of the elements were NaN, which obviously makes it hard to draw any conclusions from the data. The \emph{gaussian} and \emph{median} filters from \textbf{OpenCV} work fine  without any modification. The bilateral filter however suffers a segmentation fault when there are NaN values in the input. \par
 
-  In order to solve this issue, all NaN-values in the input are set to $10000$ before being passed to the bilateral filter. By the edge preserving property of bilateral filtering, this should reduce the impact they have on the actual filtering process. After the filtering is done, every cell which was set to 10 000 is set to 0; and the mean and variance is calculated on all non-zero elements. \par
-  Another solution we considered - but did not implement - was to use local median-filtering at each NaN. We deemed this to be a very computationally expensive process, but could possibly yield better results. \par
+In order to solve this issue, all NaN-values in the input are set to $10000$ before being passed to the bilateral filter. By the edge preserving property of bilateral filtering, this should reduce the impact they have on the actual filtering process. After the filtering is done, every cell which was set to 10 000 is set to 0; and the mean and variance is calculated on all non-zero elements. \par
+Another solution we considered - but did not implement - was to use local median-filtering at each NaN. We deemed this to be a very computationally expensive process, but could possibly yield better results. \par
 % TODO: Tom : Implementation, challenges (NAAAN), push code with visible images
 % TODO: Marek : Target scene (point 3)
 % TODO: Both : Analysis
