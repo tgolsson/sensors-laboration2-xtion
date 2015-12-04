@@ -79,8 +79,7 @@ The sensors used in the camera suffer from noise, and the first requirement for 
 
 First, the errors were quantified at varying distance with set window sizes. Fig. \vref{fig:20x20} shows the error and variances for a 20x20 window, and fig. \vref{fig:40x40} shows the same for a 40x40 window. The most obvious pattern can be seen in the left-most plot in the two figures: there is a very strong correlation between distance and both variance and error. This has been shown by other researchers, and is logical: the further the distance, the more things can interfere with measurements such as light conditions, dust particles, and so on. \par
 
-Another interesting pattern is that the mean error barely changes between the two windows; however, a larger window reduces the variance significantly. This is not so much related to reduced errors, but a result of the definition of a variance. If the errors are assumed to adhere to some sort of distribution $X \in \left(-\infty, \infty \right)$, then $\sum_{X_1}^{X_\infty} = \bar{X}$, i.e., the static error. From this it follows that the variance will then also be the pure noise in the signal. However, if too few points are sampled the sum will only approximate the mean, and the variance will become unstable.
-
+Another interesting pattern is that the mean error barely changes between the two windows; however, a larger window reduces the variance significantly. This is not so much related to reduced errors, but a result of the definition of a variance. If the errors are assumed to adhere to some sort of distribution $X \in \left(-\infty, \infty \right)$, then $\sum_{X_1}^{X_\infty} = \bar{X}$, i.e., the static error. From this it follows that the variance will then also be the pure noise in the signal. However, if too few points are sampled the sum will only approximate the mean, and the variance will become unstable. There is therefore a trade-off between window size and computational cost; i.e. while a larger window may be preferable this may be computationally expensive, especially for more complex filters. \par
 
 \begin{figure}[ht]
   \centering
@@ -92,11 +91,17 @@ Another interesting pattern is that the mean error barely changes between the tw
   \includegraphics[width=1\textwidth]{figures/plot40x40.png}
   \captionof{figure}[Mean and variance: 40x40 window]{\label{fig:40x40} The error and variance for a 40x40 pixel window at the center.}
 \end{figure}
+Moving on, the distance can instead be kept constant while the window size is increased. This is shown for 50 cm in fig.  \vref{fig:variedwindow}. Here, the effect mentioned above with variance is amplified a lot; and error and variance become very stable for the large window sizes; and in the case of variance also very small. A very interesting part is that the different window sizes clearly follow the same patterns in for example the mean plot, \textbf{apart} from \texttt{40x40} which is consistently the same value. For this reason, fig. \vref{fig:variedwindow2} is plotted. This cleaned data clearly highlights 
 \begin{figure}[ht]
   \centering
   \includegraphics[width=1\textwidth]{figures/plotwindowsizes.png}
-  
   \captionof{figure}[Mean and variance: 50cm, varied window sizes]{\label{fig:variedwindow} The error and variance at 50cm for various window sizes.}
+\end{figure}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=1\textwidth]{figures/plot2bywindowsize.png}
+  \captionof{figure}[Mean and variance: 50cm, varied window sizes, cleaned]{\label{fig:variedwindow2} The error and variance at 50cm for various window sizes with faulty data removed.}
 \end{figure}
 
 % TODO: Tom : Show plots; Measuring setup;
