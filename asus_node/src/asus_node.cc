@@ -236,7 +236,8 @@ public:
 
         cv::Mat outputM(X_SIZE,Y_SIZE,CV_32F, cv::Scalar(0.0f));
         cv::Mat outputA(X_SIZE,Y_SIZE,CV_32F, cv::Scalar(0.0f));
-        
+
+        // Set the asdlasdom
         buffer[buffPoint] = submatrix;
         buffPoint = (buffPoint + 1) % 10;
         if (numElements < 10){

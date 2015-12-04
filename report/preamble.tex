@@ -4,6 +4,7 @@
 \usepackage[utf8]{inputenc} % utf8
 \usepackage{amsmath}
 \usepackage{attachfile}
+\usepackage{booktabs}
 \usepackage{caption}
 \usepackage{commath}
 \usepackage{graphicx}
@@ -12,13 +13,11 @@
 \usepackage{mathtools}
 \usepackage{siunitx}
 \usepackage{subcaption}
+\usepackage{tabularx}
 \usepackage{url}
 \usepackage{varioref}
 \usepackage{wrapfig}
 \usepackage{xcolor}
-\usepackage{attachfile}
-\usepackage{booktabs}
-\usepackage[toc,page]{appendix}
 
 \setlength{\belowcaptionskip}{-6pt}
 \makeatletter
@@ -123,6 +122,8 @@
 
 \newcommand\ProcessThreeDashes{\llap{\color{cyan}\mdseries-{-}-}}
 
+
+\renewcommand{\tabularxcolumn}[1]{>{\small}m{#1}}
 %%% Local Variables:
 %%% mode: latex
 %%% TeX-master: t
