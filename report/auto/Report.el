@@ -21,6 +21,8 @@
     "fig:40x40"
     "fig:variedwindow"
     "fig:variedwindow2"
+    "fig:plots20x20filtered"
+    "fig:plots40x40filtered"
     "fig:refimage"
     "fig:filterswindow")
    (LaTeX-add-bibliographies

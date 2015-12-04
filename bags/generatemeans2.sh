@@ -6,7 +6,8 @@ for sz in "50" "100" ; do #"150" "200" "300"
     
     FILENAME=$sz;
     (rosbag play "depth${FILENAME}cm.bag" &);
-    sleep .2;
+    sleep .2;case  in
+                 
     (rosrun asus_node asus_node &);
 
 

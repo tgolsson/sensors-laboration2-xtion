@@ -11,7 +11,8 @@
 \begin{document}
 \maketitle %Title area
 \begin{center}
-  \emph{All code for this exercise can be found at \\ \url{https://github.com/tgolsson/sensors-laboration2-xtion}}
+  \emph{All code for this exercise can be found at \\ \url{https://github.com/tgolsson/sensors-laboration2-xtion}}\\
+  \textbf{\large In some of the plots the variance is wrongly labeled as ``stddev''. This is just a typesetting error in the images, and not the actual values. All values used are variances.}
 \end{center}
 \tableofcontents
 \lstlistoflistings % List of all code snippets
@@ -126,6 +127,22 @@ A large issue when implementing the filters was handling the large number of inv
 
 In order to solve this issue, all NaN-values in the input are set to $10000$ before being passed to the bilateral filter. By the edge preserving property of bilateral filtering, this should reduce the impact they have on the actual filtering process. After the filtering is done, every cell which was set to 10 000 is set to 0; and the mean and variance is calculated on all non-zero elements. \par
 Another solution we considered - but did not implement - was to use local median-filtering at each NaN. We deemed this to be a very computationally expensive process, but could possibly yield better results. \par
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=1\textwidth]{figures/plot20x20filtered.png}
+  \captionof{figure}[Filtered data: 20x20, 50 cm]{\label{fig:plots20x20filtered} Mean and variance for the filters at 50 cm with 20x20 window size.}
+\end{figure}
+\begin{figure}[ht]
+  \begin{center}
+    \includegraphics[width=1\textwidth]{figures/plot40x40filtered.png}
+    \captionof{figure}[Filtered data: 40x40, 50cm]{\label{fig:plots40x40filtered} Mean and variance for the filters at 50 cm
+      with 40x40 window size.}
+  \end{center}
+  
+
+\end{figure}
+
 We pointed the camera at the scene with the litle box in the middle and bigger box behind to be able to see clearly the edges. As we can see in the original image (\vref{fig:refimage}) there is a lot of noise and the edges are not clear as they should be. The used filters should smooth out the noise to be able to get better measurements. The resulting image \vref{fig:filterswindow} shows all applied filters. The first image is the original window 80x80px without any filters applied, just for the reference
 
 \begin{figure}[ht]
