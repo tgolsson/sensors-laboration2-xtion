@@ -19,10 +19,15 @@
 \listoftables
 \lstset{ matchrangestart=t} %initialise the linerange-macro for \lstinput...
 \section{Theory and motivation}
+% TODO: Add something here
+
+
 \subsection{RGBD-cameras}
 RGBD-cameras, short for \emph{Red-Green-Blue-Depth}-camera, is a type of low-cost camera commonly used for robot vision. The concept became widely popular with the release of the Microsoft Kinect in late 2010. \par
 
 These cameras consist of two separate parts: one normal color-based camera, and one infra-red sensor with accompanying projector. The sensing consists of projecting a deterministic pattern onto the scene using an infrared emitter, and then unprojecting by comparing the image to previously captured patterns at known depths. By interpolating through these patterns, a full depth-image is generated.  
+
+
 \subsection{Noise}
 
 A common problem in any type of sensing is the introduction of noise into the system. This noise can come from many sources, and be predictable or unpredictable. Examples of noise sources could be frequency hum from electric circuits, flickering lights, air pollution or pure inaccuracy. This noise can skew the results of sensors that make algorithm much more error prone. \par
@@ -31,50 +36,60 @@ There are many approaches to reduce noise. Proper calibration and good testing e
 
 \section{Implementation}
 The purpose of this exercise is to calibrate an RGBD-camera and investigate its characteristics. Then, several smoothing algorithms shall be evaluated to reduce noise in the depth sensor.
+
 \subsection{Hardware and environment}
 This exercise was performed using an \emph{ASUS Xtion Pro}. The camera was connected over \emph{USB2} to a laptop running Linux kernel 4.2.5. The communication to the camera is done using the \emph{Robot Operating System} [ROS] version \emph{Indigo Igloo}. All ROS packages used are compiled directly from GitHub development branch for Indigo Igloo. \par
 Other software used includes the OpenCV libraries, version 2.4.12.2-1.
+
 \subsection{Camera setup}
-% TODO: Marek : Screenshots, short introduction
+% TODO: Marek : Finish table, cleanup language
 As a first step we had to install \emph{openni2} package for the corresponding version of ROS. This package contains drivers for the Asus camera. After installing the package we connected the camera to the USB 2.0 port on the laptop. We made sure that our system can recognize the camera through command \emph{lsusb} and after that we run the openi2 package using \texttt{roslaunch openni2\_launch openni2.launch}. During the first launch there was a warning about no calibration file found, but we didn't need it yet for the camera testing. After running openni2 we run in the new terminal window command \texttt{rosrun rviz rviz}, which we used for inspecting the topics where camera publishes its data. In the RVIZ window we need to set global option \textbf{Fixed Frame} to \textbf{camera\_link} in order to see the camera data. \par
 
 We need to create several visualizations to see what camera publishes on each topic. There are four major types of topics with different subtopics that can be visualized using RVIZ. There are topics for \textbf{depth image}, \textbf{depth registered image}, \textbf{RGB image} and \textbf{infrared image}.  The topics can be seen in table \vref{tab:table1}. \par
 \begin{table}[h!]
-  \centering
-  \caption{Camera ROS topics}
-  \label{tab:table1}
-  \begin{tabular}{ccc}
-    \toprule
-    Topic & Description & Data preview\\
-    \midrule
-    topic & info & preview\\
-    topic & info & preview\\
-    topic & info & preview\\
-    topic & info & preview\\
-    topic & info & preview\\
-    topic & info & preview\\
-    \bottomrule
-  \end{tabular}
+  
+  \begin{center}
+    \caption{Camera ROS topics}
+    \label{tab:table1}
+    \begin{tabular}{ccc}
+      \toprule
+      Topic & Description & Data preview\\
+      \midrule
+      topic & info & preview\\
+      topic & info & preview\\
+      topic & info & preview\\
+      topic & info & preview\\
+      topic & info & preview\\
+      topic & info & preview\\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+
 \end{table}
+
+
+
 \subsection{ROS setup}
-Instead of using RVIZ to view the data as before, a custom ROS-node can be used. As there are three types of data - color image, depth image, and pointcloud, there are three listeners setup to receive this data. An example of the data on these topics can be found in the embedded files below\footnote{If these embedded files do not work, such as if you use Adobe Acrobat, please download them from the \texttt{report} folder in the GitHub repository. Verified to work with Okular and Evince on Linux.}. The \texttt{depth image} and \texttt{color image} are stored in the OpenCV \texttt{y[a]ml} format, and the point cloud is stored in the \emph{Point Cloud Library} [PCL] \texttt{pcd} format.\par
+Instead of using RVIZ to view the data as before, a custom ROS-node can be used. As there are three types of data, color image, depth image, and pointcloud, there are three listeners setup to receive this data. An example of the data on these topics can be found in the embedded files below\footnote{If these embedded files do not work, such as if you use Adobe Acrobat, please download them from the \texttt{report} folder in the GitHub repository. Verified to work with Okular and Evince on Linux.}. The \texttt{depth image} and \texttt{color image} are stored in the OpenCV \texttt{y[a]ml} format, and the point cloud is stored in the \emph{Point Cloud Library} [PCL] \texttt{pcd} format.\par
 
 \begin{center}
   \attachfile[color=0 0 0,icon=Paperclip]{pcloud.pcd}{{  }Pointcloud file}{   }
   \attachfile[color=0 0 0,icon=Paperclip]{rgbbmp.yml}{{  }RGB-image file}{   }
-  % \attachfile[color=0 0 0, icon=Paperclip]{depthimage.yml}{Depth-image file}
+  \attachfile[color=0 0 0, icon=Paperclip]{rgbdepth.yml}{Depth-image file}
 \end{center}
 
 \subsection{Camera calibration}
-% TODO: Marek : Calibration file & process
+% TODO: Marek : Language
 	In this part we were supposed to calibrate the camera which requires to setup internal parameters. After that we should be able to get not distorted image from the camera and right distance measurement. \par
 
 	As a first step we had to install \emph{camera\_calibration} package. After that we listed all topics where camera publishes its data and we chose topic \texttt{/camera/rgb/image\_raw}. Before running calibration process, we need to measure how many squares are in the checkerboard pattern and what is the length of one square. Using the command \texttt{rosrun camera\_calibration cameracalibrator.py --size=6x10 --square=0.065 image:=/camera/rgb/image\_raw{ }}\texttt{camera:=/camera/rgb --approximate=0.1}, we run the calibration application with correctly setup parameters according to our measurements of the calibrating pattern. In the calibration window we could see image from the selected topic with detection of the pattern. We set the camera to the parallel position with the ground and pointed it to the wall. After that we kept moving and tilting the pattern all over the camera field of view until X, Y and Size progressbar showed long line and button Calibrate light up. This process took up about 2 minutes until we got good results and Calibration button lighted up. We pressed the button and then waited for few minutes until the application was able to compute the right parameters for our camera. After that buttons Save and Upload lighted up. We saved the calibration file and tried to upload it to the camera firmware, but for some reason that function didn't worked properly and we had to set the calibration file as a parameter of the openni2 package. The calibration file was saved into \emph{out.txt} file in the tmp directory and we needed to convert it to yaml file. In order to do that, we used command \texttt{rosrun camera\_calibration\_parsers convert  out.txt camera.yaml} which converted the calibration file into yaml file which we could use for the openni2 package. The calibration file is shown in listing \vref{lst:calib}. \par
+        
 	To check the calibration results we tried to point the camera at some straight lines (wall corners, table etc.) and checked if they got distorted around the edges. That showed that the straight lines stayed as a straight lines, so the calibration was successful. To verify if the calibration worked in the quantitative manner we run the code from the Task 4: Noise characterization, that measured average and standard deviation for the distance in the small window. Then we pointed the camera to the objects in different distances and checked if the mean of the distance is the same as the reality, which mostly was within the range of the camera. \par
 	
 \lstinputlisting[language=yaml,caption={The calibration file for the camera}, label={lst:calib}]{camera.yaml} 
 
 \subsection{Noise characterization}
+% TODO: Tom : Finish
 The sensors used in the camera suffer from noise, and the first requirement for improvement is to objectively quantify the error. First, 5 measurements of 10 seconds each were recorded with \texttt{rosbag}. The measurements were taken \emph{50}, \emph{100}, \emph{150}, \emph{200}, and \emph{300} cm from a white wall. The camera was placed on a table, so that the  camera normal was perpendicular to the wall. This ensures that all measurements are made against the same baseline. \par
 
 First, the errors were quantified at varying distance with set window sizes. Fig. \vref{fig:20x20} shows the error and variances for a 20x20 window, and fig. \vref{fig:40x40} shows the same for a 40x40 window. The most obvious pattern can be seen in the left-most plot in the two figures: there is a very strong correlation between distance and both variance and error. This has been shown by other researchers, and is logical: the further the distance, the more things can interfere with measurements such as light conditions, dust particles, and so on. \par
@@ -104,18 +119,19 @@ Moving on, the distance can instead be kept constant while the window size is in
   \captionof{figure}[Mean and variance: 50cm, varied window sizes, cleaned]{\label{fig:variedwindow2} The error and variance at 50cm for various window sizes with faulty data removed.}
 \end{figure}
 
-% TODO: Tom : Show plots; Measuring setup;
-% TODO: Both : Analysis of plots
 \subsection{Noise filtering}
-
+% Tom : Finish, add plots
+% Both : Analysis
 A large issue when implementing the filters was handling the large number of invalid values in the input. In some situations, a majority of the elements were NaN, which obviously makes it hard to draw any conclusions from the data. The \emph{gaussian} and \emph{median} filters from \textbf{OpenCV} work fine  without any modification. The bilateral filter however suffers a segmentation fault when there are NaN values in the input. \par
 
 In order to solve this issue, all NaN-values in the input are set to $10000$ before being passed to the bilateral filter. By the edge preserving property of bilateral filtering, this should reduce the impact they have on the actual filtering process. After the filtering is done, every cell which was set to 10 000 is set to 0; and the mean and variance is calculated on all non-zero elements. \par
 Another solution we considered - but did not implement - was to use local median-filtering at each NaN. We deemed this to be a very computationally expensive process, but could possibly yield better results. \par
+
 % TODO: Tom : Implementation, challenges (NAAAN), push code with visible images
 We pointed the camera at the scene with the litle box in the middle and bigger box behind to be able to see clearly the edges. As we can see in the original image (\vref{fig:refimage}) there is a lot of noise and the edges are not clear as they should be. The used filters should smooth out the noise to be able to get better measurements. The resulting image \vref{fig:filterswindow} shows all applied filters. \par
 The first image is the original window 80x80px without any filters applied but we removed NaN values and replaced them with high number. Second image is original with applied gaussian blur filter. This filter blurs the image and reduce details, which results as smoother edges and reduced noise. Third picture is image with applied median filter. We can see that medain filter preserves the edges while removing some noise. \par
 First picture in the second line is original image with applied bilateral filter. This filter also preserves sharp edged and removes some noise by smoothing the image. Second picture in second line is result of average over 10 images. That method can reduce some noise, which appears only in few pictures or reduce effect of moving objects, that could affect the measurements. Last picture is result of median over the 10 images. Effect of that method is simmilar to the previous one, but it preserves little bit more details. 
+
 \begin{figure}[ht]
   \centering
   \includegraphics[width=1\textwidth]{figures/reference_rgb_depth.png}
@@ -127,7 +143,6 @@ First picture in the second line is original image with applied bilateral filter
   
   \captionof{figure}[Applied filters to 80x80 center window]{\label{fig:filterswindow} This image shows different filters applied to the center of the window 80x80 px. From the top left corner - original image, gaussian, median, bilateral, temporal average, temporal median}
 \end{figure}
-% TODO: Both : Analysis
 
 \section{Results}
 % Both : Summary...

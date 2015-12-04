@@ -20,7 +20,9 @@
     "fig:20x20"
     "fig:40x40"
     "fig:variedwindow"
-    "fig:variedwindow2")
+    "fig:variedwindow2"
+    "fig:refimage"
+    "fig:filterswindow")
    (LaTeX-add-bibliographies
     "References")))
 
