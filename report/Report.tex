@@ -20,21 +20,19 @@
 \lstset{ matchrangestart=t} %initialise the linerange-macro for \lstinput...
 \section{Theory and motivation}
 \subsection{RGBD-cameras}
-% TODO: RGBD, 
-
 RGBD-cameras, short for \emph{Red-Green-Blue-Depth}-camera, is a type of low-cost camera commonly used for robot vision. The concept became widely popular with the release of the Microsoft Kinect in late 2010. \par
 
-These cameras consist of two separate parts: one normal color-based camera, and one infra-red sensor with accompanying projector. The sensing consists of projecting a deterministic pattern onto the scene, and then unprojecting them by comparing to previously captured patterns at known depths. By interpolating through these patterns, a full depth-image is generated.  
+These cameras consist of two separate parts: one normal color-based camera, and one infra-red sensor with accompanying projector. The sensing consists of projecting a deterministic pattern onto the scene using an infrared emitter, and then unprojecting by comparing the image to previously captured patterns at known depths. By interpolating through these patterns, a full depth-image is generated.  
 \subsection{Noise}
-% TODO: Noise and smoothing; object identification
+
 A common problem in any type of sensing is the introduction of noise into the system. This noise can come from many sources, and be predictable or unpredictable. Examples of noise sources could be frequency hum from electric circuits, flickering lights, air pollution or pure inaccuracy. This noise can skew the results of sensors that make algorithm much more error prone. \par
 
-There are many approaches to reduce noise. Proper calibration and good testing environments is a good start, but this can only reduce external noise. Internal noise of the sensor needs to be analyzed and minimized on a much lower-level such as by using specially constructed algorithms. For sensors, that generate some sort of sequence one very naive (but nonetheless effective) approach is the use of smoothing. \par
+There are many approaches to reduce noise. Proper calibration and good testing environments is a good start, but this can only reduce external noise. Internal noise of the sensor needs to be analyzed and minimized on a much lower-level such as by using specially constructed algorithms. For sensors that generate some sort of sequence, one very naive (but nonetheless effective) approach is the use of smoothing. \par
 
 \section{Implementation}
-The purpose of this exercise is to calibrate an RGBD-camera and investigate its characteristics. Then, several smoothing algorithms shall be evaluated for the depth data.
+The purpose of this exercise is to calibrate an RGBD-camera and investigate its characteristics. Then, several smoothing algorithms shall be evaluated to reduce noise in the depth sensor.
 \subsection{Hardware and environment}
-This exercise was performed using an \emph{ASUS Xtion Pro}. The camera was connected over \emph{USB2} to a laptop running Linux kernel 4.2.5. The communication to the camera is done using the \emph{Robot Operating System} [ROS] version \emph{Indigo Igloo}. All packages used are compiled directly from GitHub development branch for Indigo Igloo. \par
+This exercise was performed using an \emph{ASUS Xtion Pro}. The camera was connected over \emph{USB2} to a laptop running Linux kernel 4.2.5. The communication to the camera is done using the \emph{Robot Operating System} [ROS] version \emph{Indigo Igloo}. All ROS packages used are compiled directly from GitHub development branch for Indigo Igloo. \par
 Other software used includes the OpenCV libraries, version 2.4.12.2-1.
 % TODO: Tom
 \subsection{Camera setup}
@@ -58,13 +56,14 @@ As a first step we had to install \emph{openmi2} package for the corresponding v
   \end{tabular}
 \end{table}
 \subsection{ROS setup}
-Instead of using RVIZ to view the data as before, a custom ROS-node can be used. As there are three types of data - color image, depth image, and pointcloud, there are three listeners setup to receive this data. An example of the data on these topics can be found in the embedded files below. \par
+Instead of using RVIZ to view the data as before, a custom ROS-node can be used. As there are three types of data - color image, depth image, and pointcloud, there are three listeners setup to receive this data. An example of the data on these topics can be found in the embedded files below\footnote{If these embedded files do not work, such as if you use Adobe Acrobat, please download them from the \texttt{report} folder in the GitHub repository. Verified to work with Okular and Evince on Linux.}. \par
 
 \begin{center}
   \attachfile[color=0 0 0,icon=Paperclip]{pcloud.pcd}{{  }Pointcloud file}{   }
-  \attachfile[color=0 0 0,icon=Paperclip]{rgbbmp.yml}{{  }RGB-image file}
+  \attachfile[color=0 0 0,icon=Paperclip]{rgbbmp.yml}{{  }RGB-image file}{   }
+  % \attachfile[color=0 0 0, icon=Paperclip]{depthimage.yml}{Depth-image file}
 \end{center}
-%\attachfile{depthimage.yml}{Depth-image file}
+
 % TODO: Tom : Sample files, point cloud & images
 \subsection{Camera calibration}
   \lstinputlisting[language=yaml]{camera.yaml} 
@@ -74,6 +73,9 @@ Instead of using RVIZ to view the data as before, a custom ROS-node can be used.
 	To check the calibration results we tried to point the camera at some straight lines (wall corners, table etc.) and checked if they got distorted around the edges. That showed that the straight lines stayed as a straight lines, so the calibration was successful. To verify if the calibration worked in the quantitative manner we run the code from the Task 4: Noise characterization, that measured average and standard deviation for the distance in the small window. Then we pointed the camera to the objects in different distances and checked if the mean of the distance is the same as the reality, which mostly was within the range of the camera. \par
 	
   \subsection{Noise characterization}
+  The sensors used in the camera suffer from noise, and before being able to reduce it, measurements need to be made. First, 5 measurements of 10 seconds each were recorded with \texttt{rosbag}. The measurements were taken \emph{50}, \emph{100}, \emph{150}, \emph{200}, and \emph{300} cm from a white wall. The camera was placed on a table, so that the  camera normal was perpendicular to the wall. This ensures that all measurements are made against the same baseline. \par
+
+  
   \begin{figure}[ht]
     \centering
     \includegraphics[width=1\textwidth]{figures/20x20-plot.png}
@@ -93,7 +95,12 @@ Instead of using RVIZ to view the data as before, a custom ROS-node can be used.
 
 % TODO: Tom : Show plots; Measuring setup;
 % TODO: Both : Analysis of plots
-\subsection{Noise filtering}
+  \subsection{Noise filtering}
+
+  A large issue when implementing the filters was handling the large number of invalid values in the input. In some situations, a majority of the elements were NaN, which obviously makes it hard to draw any conclusions from the data. The \emph{gaussian} and \emph{median} filters from \textbf{OpenCV} work fine  without any modification. The bilateral filter however suffers a segmentation fault when there are NaN values in the input. \par
+
+  In order to solve this issue, all NaN-values in the input are set to $10000$ before being passed to the bilateral filter. By the edge preserving property of bilateral filtering, this should reduce the impact they have on the actual filtering process. After the filtering is done, every cell which was set to 10 000 is set to 0; and the mean and variance is calculated on all non-zero elements. \par
+  Another solution we considered - but did not implement - was to use local median-filtering at each NaN. We deemed this to be a very computationally expensive process, but could possibly yield better results. \par
 % TODO: Tom : Implementation, challenges (NAAAN), push code with visible images
 % TODO: Marek : Target scene (point 3)
 % TODO: Both : Analysis

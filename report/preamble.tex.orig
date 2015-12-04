@@ -13,13 +13,17 @@
 \usepackage{siunitx}
 \usepackage{subcaption}
 \usepackage{url}
-\usepackage{varioref}
-\usepackage{wrapfig}
-\usepackage{xcolor}
+<<<<<<< HEAD
 \usepackage{attachfile}
 \usepackage{booktabs}
 \usepackage[toc,page]{appendix}
+=======
+\usepackage{varioref}
+\usepackage{wrapfig}
+\usepackage{xcolor}
 
+
+>>>>>>> 47ad73056bbb9045f85f4de7b4f99201faaf0453
 \setlength{\belowcaptionskip}{-6pt}
 \makeatletter
 \lst@Key{matchrangestart}{f}{\lstKV@SetIf{#1}\lst@ifmatchrangestart}
