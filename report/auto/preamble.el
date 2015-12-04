@@ -2,7 +2,7 @@
  "preamble"
  (lambda ()
    (TeX-add-to-alist 'LaTeX-provided-package-options
-                     '(("geometry" "a4paper" "top=1in" "bottom=1.1in" "left=1in" "right=1in") ("inputenc" "utf8") ("fontenc" "T1") ("appendix" "toc" "page")))
+                     '(("fontenc" "T1") ("geometry" "a4paper" "top=1in" "bottom=1.1in" "left=1in" "right=1in") ("appendix" "toc" "page") ("inputenc" "utf8")))
    (add-to-list 'LaTeX-verbatim-environments-local "lstlisting")
    (add-to-list 'LaTeX-verbatim-macros-with-braces-local "url")
    (add-to-list 'LaTeX-verbatim-macros-with-braces-local "path")
@@ -11,24 +11,24 @@
    (add-to-list 'LaTeX-verbatim-macros-with-delims-local "path")
    (add-to-list 'LaTeX-verbatim-macros-with-delims-local "lstinline")
    (TeX-run-style-hooks
-    "graphicx"
-    "caption"
-    "geometry"
-    "inputenc"
     "fontenc"
-    "xcolor"
-    "listings"
-    "subcaption"
-    "siunitx"
-    "wrapfig"
-    "varioref"
+    "geometry"
+    "appendix"
+    "inputenc"
     "amsmath"
-    "commath"
-    "mathtools"
-    "hyperref"
-    "url"
     "attachfile"
-    "appendix")
+    "caption"
+    "commath"
+    "graphicx"
+    "hyperref"
+    "listings"
+    "mathtools"
+    "siunitx"
+    "subcaption"
+    "url"
+    "varioref"
+    "wrapfig"
+    "xcolor")
    (TeX-add-symbols
     '("di" 2)
     "YAMLcolonstyle"

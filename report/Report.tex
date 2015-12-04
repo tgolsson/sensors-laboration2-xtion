@@ -52,6 +52,9 @@ Instead of using RVIZ to view the data as before, a custom ROS-node can be used.
   \lstinputlisting[language=yaml]{camera.yaml} 
 % TODO: Marek : Calibration file & process
   \subsection{Noise characterization}
+  The sensors used in the camera suffer from noise, and before being able to reduce it, measurements need to be made. First, 5 measurements of 10 seconds each were recorded with \texttt{rosbag}. The measurements were taken \emph{50}, \emph{100}, \emph{150}, \emph{200}, and \emph{300} cm from a white wall. The camera was placed on a table, so that the  camera normal was perpendicular to the wall. This ensures that all measurements are made against the same baseline. \par
+
+  
   \begin{figure}[ht]
     \centering
     \includegraphics[width=1\textwidth]{figures/20x20-plot.png}
@@ -71,7 +74,12 @@ Instead of using RVIZ to view the data as before, a custom ROS-node can be used.
 
 % TODO: Tom : Show plots; Measuring setup;
 % TODO: Both : Analysis of plots
-\subsection{Noise filtering}
+  \subsection{Noise filtering}
+
+  A large issue when implementing the filters was handling the large number of invalid values in the input. In some situations, a majority of the elements were NaN, which obviously makes it hard to draw any conclusions from the data. The \emph{gaussian} and \emph{median} filters from \textbf{OpenCV} work fine  without any modification. The bilateral filter however suffers a segmentation fault when there are NaN values in the input. \par
+
+  In order to solve this issue, all NaN-values in the input are set to $10000$ before being passed to the bilateral filter. By the edge preserving property of bilateral filtering, this should reduce the impact they have on the actual filtering process. After the filtering is done, every cell which was set to 10 000 is set to 0; and the mean and variance is calculated on all non-zero elements. \par
+  Another solution we considered - but did not implement - was to use local median-filtering at each NaN. We deemed this to be a very computationally expensive process, but could possibly yield better results. \par
 % TODO: Tom : Implementation, challenges (NAAAN), push code with visible images
 % TODO: Marek : Target scene (point 3)
 % TODO: Both : Analysis
