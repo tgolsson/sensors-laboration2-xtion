@@ -76,7 +76,7 @@ Instead of using RVIZ to view the data as before, a custom ROS-node can be used.
 \begin{center}
   \attachfile[color=0 0 0,icon=Paperclip]{pcloud.pcd}{{  }Pointcloud file}{   }
   \attachfile[color=0 0 0,icon=Paperclip]{rgbbmp.yml}{{  }RGB-image file}{   }
-  \attachfile[color=0 0 0, icon=Paperclip]{rgbdepth.yml}{Depth-image file}
+  \attachfile[color=0 0 0,icon=Paperclip]{rgbdepth.yml}{  }Depth-image file}
 \end{center}
 
 \subsection{Camera calibration}
@@ -95,7 +95,7 @@ The sensors used in the camera suffer from noise, and the first requirement for 
 
 First, the errors were quantified at varying distance with set window sizes. Fig. \vref{fig:20x20} shows the error and variances for a 20x20 window, and fig. \vref{fig:40x40} shows the same for a 40x40 window. The most obvious pattern can be seen in the left-most plot in the two figures: there is a very strong correlation between distance and both variance and error. This has been shown by other researchers, and is logical: the further the distance, the more things can interfere with measurements such as light conditions, dust particles, and so on. \par
 
-Another interesting pattern is that the mean error barely changes between the two windows; however, a larger window reduces the variance significantly. This is not so much related to reduced errors, but a result of the definition of a variance. If the errors are assumed to adhere to some sort of distribution $X \in \left(-\infty, \infty \right)$, then $\sum_{X_1}^{X_\infty} = \bar{X}$, i.e., the static error. From this it follows that the variance will then also be the pure noise in the signal. However, if too few points are sampled the sum will only approximate the mean, and the variance will become unstable. There is therefore a trade-off between window size and computational cost; i.e. while a larger window may be preferable this may be computationally expensive, especially for more complex filters. \par
+Another interesting pattern is that the mean error barely changes between the two windows; however, a larger window reduces the variance significantly. This is not so much related to reduced errors, but a result of the definition of a variance. If the errors are assumed to adhere to some sort of distribution $X \in \left(-\infty, \infty \right)$, then $\sum_{X_1}^{X_\infty} = \bar{X}$, i.e., the static error. From this it follows that the variance will then also be on same order of magnitude as the noise in the signal. However, if too few points are sampled the sum will only approximate the mean, and the variance will become unstable. There is therefore a trade-off between window size and computational cost; i.e. while a larger window may be preferable this may be computationally expensive, especially for more complex filters. \par
 
 \begin{figure}[ht]
   \centering
@@ -107,7 +107,8 @@ Another interesting pattern is that the mean error barely changes between the tw
   \includegraphics[width=1\textwidth]{figures/plot40x40.png}
   \captionof{figure}[Mean and variance: 40x40 window]{\label{fig:40x40} The error and variance for a 40x40 pixel window at the center.}
 \end{figure}
-Moving on, the distance can instead be kept constant while the window size is increased. This is shown for 50 cm in fig.  \vref{fig:variedwindow}. Here, the effect mentioned above with variance is amplified a lot; and error and variance become very stable for the large window sizes; and in the case of variance also very small. A very interesting part is that the different window sizes clearly follow the same patterns in for example the mean plot, \textbf{apart} from \texttt{40x40} which is consistently the same value. For this reason, fig. \vref{fig:variedwindow2} is plotted. This cleaned data clearly highlights 
+Moving on, the distance can instead be kept constant while the window size is increased. This is shown for 50 cm in fig.  \vref{fig:variedwindow}. Here, the effect mentioned above with variance is amplified a lot; and error and variance become very stable for the large window sizes; and in the case of variance also very small. There is also a clearly visible artefact between samples 0-60 which are much smaller than the other values. As most of the values are higher, these smaller values are discarded to yield fig. \vref{fig:variedwindow2}. This cleaned data clearly highlights how stable the mean is for the larger window sizes. It also shows that something is broken in the 40x40 measurement, though it is hard to pintpoint what. One (hypothetical) possibility is that there is a small patch of very noisy values that get introduced, and as the window size is still quite small it has a large impact on the variance. \par
+One last conclusion can be seen, and this is that the mean increases with window sizes. This is caused by the increase in angle towards the edges of the plot. As all distances are measured from the sensor, this causes them to increase slightly. \par
 \begin{figure}[ht]
   \centering
   \includegraphics[width=1\textwidth]{figures/plotwindowsizes.png}
@@ -123,12 +124,12 @@ Moving on, the distance can instead be kept constant while the window size is in
 \subsection{Noise filtering}
 % Tom : Finish, add plots
 % Both : Analysis
-A large issue when implementing the filters was handling the large number of invalid values in the input. In some situations, a majority of the elements were NaN, which obviously makes it hard to draw any conclusions from the data. The \emph{gaussian} and \emph{median} filters from \textbf{OpenCV} work fine  without any modification. The bilateral filter however suffers a segmentation fault when there are NaN values in the input. \par
+To improve the input depth image five different filters were implemented for smoothing. The first three filters; \emph{median}, \emph{gaussian}, and \emph{bilateral}, come from the OpenCV library. The last two filters, in the temporal domain, were implemented manually in C++. A large issue when using the filters was handling the large number of invalid values in the input. In some situations, a majority of the elements were NaN, which obviously makes it hard to draw any conclusions from the data. This caused particular problems with the  bilateral filter, which suffers a segmentation fault when there are too many NaN values in the input. \par
 
 In order to solve this issue, all NaN-values in the input are set to $10000$ before being passed to the bilateral filter. By the edge preserving property of bilateral filtering, this should reduce the impact they have on the actual filtering process. After the filtering is done, every cell which was set to 10 000 is set to 0; and the mean and variance is calculated on all non-zero elements. \par
 Another solution we considered - but did not implement - was to use local median-filtering at each NaN. We deemed this to be a very computationally expensive process, but could possibly yield better results. \par
 
-<<<<<<< HEAD
+The result of filtering our depth-images is seen below in fig. \ref{fig:plots20x20filtered} and \vref{fig:plots40x40filtered}. Just as in the previous section, the unreliable data at the start is removed to clean up the results.
 \begin{figure}[ht]
   \centering
   \includegraphics[width=1\textwidth]{figures/plot20x20filtered.png}
