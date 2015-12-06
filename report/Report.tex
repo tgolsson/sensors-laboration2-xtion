@@ -155,7 +155,7 @@ format.\par
 Next, the camera was calibrated by setting its internal parameters in openni. This is required to get an undistorted image
 from the camera and therefore the right distance measurement. \par
 
-As a first installed the ROS \emph{camera\_calibration} package. Before running
+To calibrate the camera we used the ROS \emph{camera\_calibration} package. Before running
 the calibration process, we measured the number of squares on the checkerboard
 and their size. The checkerboard used had 11 squares on one axis, and 7 on the
 other; and each side was 6.5 cm long.  Using the command \texttt{rosrun
@@ -170,9 +170,7 @@ at the wall. After that continuously moved and tilted the pattern inside the
 camera field of view until X, Y and Size progress bar filled up and, and the
 camera could be calibrated from the captured data. The data collection took
 about 2-3 minutes to complete.  The software is supposedly able to store the
-calibration directly to the camera; but this did not work. Instead, we saved the
-calibration file and tried to upload it to the camera firmware, but for some
-reason that function didn't work. Instead, we later passed the calibration file
+calibration directly to the camera; but this did not work. Instead, we later passed the calibration file
 to the openni software as a command line argument. \par
         
 The calibration file was saved into \emph{out.txt} file in the \textbf{tmp}
