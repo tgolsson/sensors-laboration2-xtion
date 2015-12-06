@@ -17,10 +17,10 @@
 \begin{document}
 \maketitle %Title area
 \begin{center}
-  \emph{All code for this exercise can be found at \\ \url{https://github.com/tgolsson/sensors-laboration2-xtion}}\\
-  \textbf{\large In some of the plots the ``variance'' is wrongly labeled as
+  \emph{All code for this exercise can be found at \\ \url{https://github.com/tgolsson/sensors-laboration2-xtion}} \\ \vspace{10pt}
+  \textbf{\Large In some of images and plots the ``variance'' is wrongly labeled as
     ``standard deviation''. This is just a typesetting error in the images, and
-    not the actual values. All values report in all plots are variances.}
+    not the actual values. All values are variances.}
 \end{center}
 \tableofcontents
 \lstlistoflistings % List of all code snippets
@@ -42,7 +42,7 @@ These cameras consist of two separate parts: one normal color-based camera, and
 one infrared sensor with accompanying projector. The sensing consists of
 projecting a deterministic pattern onto the scene using an infrared emitter, and
 then unprojecting by comparing the image to previously captured patterns at
-known depths. By interpolating through these patterns, a full depth-image is
+known depths. By interpolating through these patterns throughout the full scene, a depth-image is
 generated.
 
 
@@ -54,12 +54,12 @@ unpredictable. Examples of noise sources could be frequency hum from electric
 circuits, flickering lights, air pollution or pure inaccuracy. This noise can
 skew the results of sensors and make execution more error prone. \par
 
-There are many approaches to reduce noise. Proper calibration and good testing
-environments is a good start, but this can only reduce external noise. Internal
-noise of the sensor needs to be analyzed and minimized on a much lower-level
-such as by using specially constructed algorithms. For sensors that generate
-some sort of sequence, one very naive (but nonetheless effective) approach is
-the use of smoothing. \par
+There are many approaches to reduce noise. Proper calibration is a good start,
+but this can only reduce some types external noise. Internal noise of the sensor
+needs to be analyzed and minimized on a much lower-level such as by using
+specially constructed algorithms. For sensors that generate some sort of
+sequence, one very naive (but nonetheless effective) approach is the use of
+smoothing. \par
 
 \section{Implementation}
 The purpose of this exercise is to calibrate an RGBD-camera and investigate its
@@ -75,56 +75,55 @@ from GitHub development branch for Indigo Igloo. \par
 Other software used includes the OpenCV libraries, version 2.4.12.2-1.
 
 \subsection{Camera setup}
-As a first step we had to install \emph{openni2} package for the corresponding
-version of ROS. This package contains drivers for the ASUS camera. After
+As a first step we installed \emph{openni2} package for ROS Indigo Igloo.
+This package contains drivers for the ASUS camera. After
 installing the package we connected the camera to the USB 2.0 port on the
-laptop. We made sure that our system can recognize the camera through command
-\texttt{lsusb} and after that we run the openni2 package using \texttt{roslaunch
+laptop, and sure that the system can recognize the camera through command
+\texttt{lsusb}. After that we ran the openni2 package using \texttt{roslaunch
   openni2\_launch openni2.launch}. \par
-During the first launch there was a warning about no calibration file found, but
-we didn't need it yet for the camera testing. After running openni2 we run in
-the new terminal window command \texttt{rosrun rviz rviz}, which we used for
-inspecting the topics where camera publishes its data. In the RVIZ window we
-needed to set global option \textbf{Fixed Frame} to \textbf{camera\_link} in
-order to see the camera data. \par
 
-We need to create several visualizations to see what camera publishes on each
+After starting \texttt{openni2} we ran the command \texttt{rosrun rviz rviz},
+which we used to visually inspect the topics published by the camera through \emph{openni2}. In the
+RVIZ window we needed to set the global option \textbf{Fixed Frame} to
+\textbf{camera\_link} in order to see the camera data. \par
+
+We created several visualizations to see what camera publishes on each
 topic. There are four major types of topics with different subtopics that can be
 visualized using RVIZ. There are topics for \textbf{depth image}, \textbf{depth
-  registered image}, \textbf{RGB image} and \textbf{infrared image}. From the
-depth and depth registered topic we can also get point cloud. The topics can be
-seen in table \vref{tab:table1} (we omitted the subtopics, because they contains
-the same data, but with different compression method, which is not relevant for
-this task). \par
+  registered image}, \textbf{RGB image} and \textbf{infrared image}. The
+depth and depth registered data can also be used as pointclouds. The topics can be
+seen in table \vref{tab:table1}. The subtopics are omitted, because they contain
+the same data but filtered. \par
 \noindent
 {
-  \begin{tabularx}{1\textwidth}{lXc}
-  
+  \begin{tabularx}{1\textwidth}{lXc}  
       \toprule
       Topic & Description & Data preview\\
       \midrule
       \texttt{/camera/depth/image\_raw} &
-      Contains depth image & 
+Depth image & 
 \raisebox{-.5\height}{      \includegraphics[width=0.2\textwidth]{figures/depth-image-raw.png}}\\
       
       \texttt{/camera/depth/points} &
-      Contains point cloud of the point distances & 
+
+                                      Point cloud & 
 \raisebox{-.5\height}{      \includegraphics[width=0.2\textwidth]{figures/depth-image-raw-pointcloud.png}}\\
       
       \texttt{/camera/depth\_registered/image\_raw} &
-      Contains depth image projected from both sensors& 
+                                                      Combination of depth and
+                                                      RGB images& 
 \raisebox{-.5\height}{      \includegraphics[width=0.2\textwidth]{figures/depth_registered-image-raw.png}}\\
       
       \texttt{/camera/depth\_registered/points} &
-      Contains point cloud of the point distances projected from both sensors & 
+                       Same as depth registered, but as a pointcloud   & 
 \raisebox{-.5\height}{      \includegraphics[width=0.2\textwidth]{figures/depth_registered-image-raw-pointcloud.png}}\\
       
       \texttt{/camera/ir/image} &
-      Contains infrared image & 
+      The infrared pattern captured by the sensor & 
 \raisebox{-.5\height}{      \includegraphics[width=0.2\textwidth]{figures/ir-image-raw.png}}\\
       
       \texttt{/camera/rgb/image\_raw} &
-      Contains RGB image & 
+      RGB image & 
 \raisebox{-.5\height}{      \includegraphics[width=0.2\textwidth]{figures/rgb-image-raw.png}}\\
       \bottomrule
     \end{tabularx}
@@ -153,49 +152,47 @@ format.\par
 
 \subsection{Camera calibration}
 
-In this part we were supposed to calibrate the camera which requires to set up
-internal parameters. After that we should be able to get not distorted image
-from the camera and right distance measurement. \par
+Next, the camera was calibrated by setting its internal parameters in openni. This is required to get an undistorted image
+from the camera and therefore the right distance measurement. \par
 
-As a first step we had to install \emph{camera\_calibration} package. After that
-we listed all topics where camera publishes its data and we chose topic
-\texttt{/camera/rgb/image\_raw}. Before running the calibration process, we
-measured the number of squares on the checkerboard and their size. Using the
-command \texttt{rosrun camera\_calibration cameracalibrator.py --size=6x10
-  --square=0.065 image:=/camera/rgb/image\_raw}{ } \texttt{camera:=/camera/rgb
-  --approximate=0.1}, we run the calibration application with correctly set up
-parameters according to our measurements of the calibrating pattern. \par
+As a first installed the ROS \emph{camera\_calibration} package. Before running
+the calibration process, we measured the number of squares on the checkerboard
+and their size. The checkerboard used had 11 squares on one axis, and 7 on the
+other; and each side was 6.5 cm long.  Using the command \texttt{rosrun
+  camera\_calibration cameracalibrator.py --size=6x10 --square=0.065}\\\texttt{
+  image:=/camera/rgb/image\_raw}{ } \texttt{camera:=/camera/rgb
+  --approximate=0.1}, we could then start the calibration process. As shown in
+the command, we used the \texttt{rgb/image\_raw} topic to do our calibration.\par
 
-In the calibration window we could see image from the selected topic with
-detection of the pattern. We set the camera to the parallel position with the
-ground and pointed it to the wall. After that we kept moving and tilting the
-pattern all over the camera field of view until X, Y and Size progress bar
-showed long line and button Calibrate light up. This process took up about 2
-minutes until we got good results and Calibration button lighted up. We pressed
-the button and then waited for few minutes until the application was able to
-compute the right parameters for our camera. After that buttons Save and Upload
-lighted up. We saved the calibration file and tried to upload it to the camera
-firmware, but for some reason that function didn't worked properly and we had to
-set the calibration file as a parameter of the openni2 package. \par
+In the calibration window we could see image from the selected topic with the
+pattern highlighted. We set the camera be parallel with the floor and pointed it
+at the wall. After that continuously moved and tilted the pattern inside the
+camera field of view until X, Y and Size progress bar filled up and, and the
+camera could be calibrated from the captured data. The data collection took
+about 2-3 minutes to complete.  The software is supposedly able to store the
+calibration directly to the camera; but this did not work. Instead, we saved the
+calibration file and tried to upload it to the camera firmware, but for some
+reason that function didn't work. Instead, we later passed the calibration file
+to the openni software as a command line argument. \par
         
 The calibration file was saved into \emph{out.txt} file in the \textbf{tmp}
-directory and we needed to convert it to YAML file. In order to do that, we used
-command \texttt{rosrun camera\_calibration\_parsers convert out.txt camera.yaml}
-which converted the calibration file into yaml file which we could use for the
-openni2 package. The calibration file is shown in listing \vref{lst:calib}. \par
+directory before being converted into a YAML file. To do that, we used
+the command \texttt{rosrun camera\_calibration\_parsers convert /tmp/out.txt camera.yaml},
+which converted the calibration file into a YAML file in the format used by openni. The calibration file is shown in listing \vref{lst:calib}. \par
         
-To check the calibration results we pointed the camera at some straight lines
-(wall corners, table etc.) and checked if they got distorted around the
-edges (fisheye lens effect). That showed that the straight lines stayed as 
-straight lines, so the
-calibration was successful. To quantitatively verify if the calibration worked
-we run the code from the Task 4: Noise characterization, that measured average
-and variance for the distance in the small window. Then we pointed the camera to
-the objects in different distances and checked if the mean of the distance is
-the same as the reality, which mostly was within the range of the camera. \par
+To check the calibration results we pointed the camera at nearby straight lines
+(corners, tables etc.) and visually checked if they got distorted around the
+edges (fisheye lens effect). That showed that the straight lines stayed as
+straight lines, so the calibration was successful. To quantitatively verify the
+calibration, we took a screenshot of the camera image, and fitted a line onto
+one of the straight lines in the picture. As this was possible to do without errors, it shows
+that the line is not only visually straight but also perfectly straight. Had
+this not been the case, it would have been possible to measure the error
+between the perfect line and the camera line but this was found to be
+unnecessary. \par
 
-We also noticed that there are some surfaces like ceiling lights and reflective 
-surfaces, that ruins our measurements, because they showed completely wrong distance 
+We also noticed that there are some objects, such as lights and reflective 
+surfaces, that ruin the measurements and return wrong distance 
 data. \par
 	
 \lstinputlisting[language=yaml,caption={The calibration file for the camera},
@@ -209,23 +206,25 @@ seconds each were recorded with \texttt{rosbag}. The measurements were taken
 \emph{50}, \emph{100}, \emph{150}, \emph{200}, and \emph{300} cm from a white
 wall. The camera was placed on a table, so that the camera normal was
 perpendicular to the wall. This ensures that all later noise and smoothing
-comparisons are made against the same baseline. \par
+comparisons are made on the same data. 
 
-First, the errors were quantified at varying distance with set window
+The recorded data can be downloaded here: \url{
+  https://drive.google.com/folderview?id=0B4HtjhS_-Y3ZZEN4NGctMk9DSDg&usp=sharing}.\par
+
+First, the errors were measured at varying distance with set window
 sizes. Fig. \vref{fig:20x20} shows the error and variances for a 20x20 window,
 and fig. \vref{fig:40x40} shows the same for a 40x40 window. The most obvious
 pattern can be seen in the right-most plot in the two figures: there is a very
-strong correlation between distance and both variance and error. This has been
-shown by other researchers, and is logical: the further the distance, the more
-things can interfere with measurements such as light conditions, dust particles,
-and so on. \par
+strong correlation between distance, and both variance and error. This has been
+shown before, and is logical: the further the distance, the more
+things can affect the measurements. \par
 
 Another interesting pattern is that the mean error barely changes between the
 two windows; however, a larger window reduces the variance significantly. This
 is not so much related to reduced errors, but a result of the definition of a
 variance. If the errors are assumed to adhere to some sort of distribution
 $X \in \left(-\infty, \infty \right)$, then $\frac{1}{\left|X\right|}\sum_{X_1}^{X_\infty} = \bar{X}$,
-i.e., the static error. From this it follows that the variance will then also be
+i.e., the static error. From this it follows that the variance will be
 on same order of magnitude as the noise in the signal. However, if too few
 points are sampled the sum will only approximate the mean, and the variance will
 become unstable. There is therefore a trade-off between window size and
@@ -268,7 +267,7 @@ interfering in the 40x40 measurement, though it is hard to pinpoint what. One
 that get introduced when the window size increases, and as the window size is
 still quite small it has a large impact on the variance. \par
 
-One last conclusion can be seen, and this is that the mean increases with window
+One last phenomenon can be seen, and this is that the mean increases with window
 sizes. This is caused by the increase in angle towards the edges of the
 window. As all distances are measured from the sensor, this causes them to
 increase slightly. The increase is approximately $\frac{1}{\cos \alpha}$, where
@@ -345,63 +344,76 @@ To visualize the smoothing algorithms we set up a scene with a small box in the
 middle, and a bigger box behind it. This allowed us to clearly see the edges of
 the smaller box through the camera. As we can see in the original image
 (fig. \vref{fig:refimage}) there is a lot of noise and the edges are not as
-clear as they should be. The used filters should smooth out the noise to be able
-to get better measurements. The resulting image \vref{fig:filterswindow} shows
-all filters applied to the center of the image. \par
+clear as they should be. The used filters should smooth out the noisy edges to be able
+to get better measurements. The result of filtering the area around the smaller boxis shown in fig. \vref{fig:filterswindow}. \par
 
-The first image is the original window 80x80 px without any filters applied but
-we removed NaN values and replaced them with high number. Second image is
-original with applied gaussian blur filter. This filter blurs the image and
-reduce details, which results in smoother edges and reduced noise. Third picture
-is image with applied median filter. We can see that median filter preserves the
-edges while removing some noise. \par
+The filtered area is 80x80 px in the middle of the camera data. The first image
+is the original without any filters applied, but with NaN values set to 0. The
+second image is filtered with a gaussian kernel. This filter blurs the image and
+reduce details, which results in smoother edges and reduced noise. The last
+picture on the upper row is median filtered. We can see that median filter
+preserves the edges while removing some noise. \par
 
-First picture in the second row is original image with applied bilateral
-filter. This filter also preserves sharp edges and removes some noise by
-smoothing the image. The second picture in the same line is the average over 10
-images. That method can reduce some noise, which appears only in few pictures or
-reduce effect of moving objects, that could affect the measurements. Last
-picture is the median over 10 images. Effect of that method is similar to the
-previous one, but it preserves more details.
+The first picture in the second row has been filtered using a bilateral
+filter. This filter also smooths, while preserving large intensity
+differences. The second picture in the same row is the average over 10
+sequential images. This method reduces noise which appears only in few pictures
+or reduce effect of moving objects, that could affect the measurements, as well
+as oscillations in measurements. Last picture is the median of 10 images applied
+per pixel. Effect of that method is similar to the previous one, but it
+preserves more details. The effect of temporal smoothing was so strong that a
+hand could be repeatedly moved quickly in and out of the camera field, without affecting
+the measurements.
 
 \begin{figure}[ht]
   \centering
   \includegraphics[width=1\textwidth]{figures/reference_rgb_depth.png}
   \captionof{figure}[Reference scene: RGB and depth image]{\label{fig:refimage}
-    Reference image for demonstrating effects of the filters}
+    Reference image for demonstrating filtering effects.}
 \end{figure}
 \begin{figure}[ht]
   \centering
   \includegraphics[width=1\textwidth]{figures/applied_filters_center.png}
   
   \captionof{figure}[Reference scene: Filtered 80x80 center
-  window]{\label{fig:filterswindow} This image shows different filters applied
-    to the center of the window 80x80 px. From the top left corner - original
-    image, gaussian, median, bilateral, temporal average, temporal median}
+  window]{\label{fig:filterswindow} Different filters applied
+    to the center 80x80 px of the reference image. From the top left corner - original
+    image, gaussian, median, bilateral, temporal average, temporal median.}
 \end{figure}
 
 \section{Results}
-During this exercise we could see, that data received from this ASUS camera are 
-full of noise and because of that they might not be completely reliable. On top of 
-that when we pointed the camera to some surfaces that emits or absorb light, we 
-get completely wrong distance data. \par
-Before we run the calibration we could see that camera suffers from the fisheye lens 
-effect, that distorted objects near the edges of the field of view. As we could see, 
-the calibration process reduced this effect to minimum and resulted as a straight 
-undistorted lines. \par
-In order to reduce noise and we tried several methods how to get proper data. 
-First method was to increase the window from which we computed the mean distance and 
-variance. Our results showed that bigger window bring better results, but in the 
-real time usage can be computationally expensive. Second method was using several filters 
-that should smooth the picture and as a result reduce the noise. As our results showed, 
-the best performing filter were both temporal filters on the 50 cm distance, but gaussian 
-and bilateral filter at 300 cm distance. \par 
-The results are not conclusive for other situations than a white wall, because the 
-filtres can have different results in different lightning conditions and objects. Because 
-of that fact, we can't say that using these filters are the best for every situation, despite 
-the fact that it worked best in our setup. \par
+During this exercise we could see that data received from this ASUS camera is 
+very noisy and because of this they might not be completely reliable. On top of 
+that we found that when viewing surfaces that emit or absorb light, we 
+get wrong distance values. \par
 
-\bibliography{References}
+Before we the calibration we could see that camera suffers from the fisheye lens
+effect, that distorted objects near the edges of the field of view. The
+calibration process reduced this effect to minimum and resulted in straight
+undistorted lines. \par
+
+In order to reduce noise we tried several methods. The first method was to
+increase the window from which we computed the mean distance and variance. Our
+results showed that bigger window give better results, but in the real time
+usage this can be computationally expensive. We also verified previous results
+that long distances can be detrimental to the camera performance. \par
+
+The second method we tried was to use filters to smooth the image and as a
+result reduce the noise. As our results showed, the best performing filter were
+temporal filters on the 50 cm distance, but gaussian and bilateral filter at 300
+cm distance. This could be related to the increasing variance and mean at high
+distances, which causes self-similarity to become stronger than
+sequence-similarity of the images. \par
+
+The results are not conclusive for other situations than a white wall, because
+the camera, and by extent the filters, will behave very differently in different
+environments. We have noted that different surfaces will drastically change the
+performance, and we noticed that flickering lights interfered with our
+measurements. Because of this, we can't say that using these filters are the
+best for every situation, despite the fact that it worked best in our
+setup. \par
+
+
 \end{document}
 
 

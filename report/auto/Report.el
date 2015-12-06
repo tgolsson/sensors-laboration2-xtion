@@ -29,7 +29,5 @@
     "fig:plots40x40filtered"
     "fig:300filt"
     "fig:refimage"
-    "fig:filterswindow")
-   (LaTeX-add-bibliographies
-    "References")))
+    "fig:filterswindow")))
 
