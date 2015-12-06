@@ -186,12 +186,17 @@ openni2 package. The calibration file is shown in listing \vref{lst:calib}. \par
         
 To check the calibration results we pointed the camera at some straight lines
 (wall corners, table etc.) and checked if they got distorted around the
-edges. That showed that the straight lines stayed as straight lines, so the
+edges (fish eye lens effect). That showed that the straight lines stayed as 
+straight lines, so the
 calibration was successful. To quantitatively verify if the calibration worked
 we run the code from the Task 4: Noise characterization, that measured average
 and variance for the distance in the small window. Then we pointed the camera to
 the objects in different distances and checked if the mean of the distance is
 the same as the reality, which mostly was within the range of the camera. \par
+
+We also noticed that there are some surfaces like ceiling lights and reflective 
+surfaces, that ruins our measurements, becauce they showed completly wrong distance 
+data. \par
 	
 \lstinputlisting[language=yaml,caption={The calibration file for the camera},
 label={lst:calib}]{camera.yaml}
@@ -310,7 +315,8 @@ the previous section, the unreliable data at the start is removed to clean up
 the results. As can be seen, the two temporal smoothing algorithms far
 outperform the other algorithms at 50 cm for both window sizes, though the
 difference is very small. However, when increasing the distance up to 300 cm
-this changes as shown in fig. \vref{fig:300filt}. In this case, the gaussian and bilateral filter have a better performance on both variance and mean error. 
+this changes as shown in fig. \vref{fig:300filt}. In this case, the gaussian 
+and bilateral filter have a better performance on both variance and mean error. 
 
 \begin{figure}[ht]
   \centering
@@ -375,7 +381,25 @@ previous one, but it preserves more details.
 \end{figure}
 
 \section{Results}
-% Both : Summary...
+During this excersice we could see, that data received from this ASUS camera are 
+full of noise and because of that they might not be completly reliable. On top of 
+that when we pointed the camera to some surfaces that emits or absorb light, we 
+get completly wrong distance data. \par
+Before we run the calibration we could see that camera suffers from the fish eye lens 
+effect, that distorted objects near the edges of the field of view. As we could see, 
+the calibration proces reduced this effect to minimum and resulted as a straight 
+undistorted lines. \par
+In order to reduce noise and we tried several methods how to get proper data. 
+First method was to increase the window from which we computed the mean distance and 
+variance. Our results showed that bigger window bring better results, but in the 
+realtime usage can be computationaly expensive. Second method was using several filters 
+that should smooth the picture and as a result reduce the noise. As our results showed, 
+the best performing filter were both temporal filters on the 50 cm distance, but gaussian 
+and bilateral filter at 300 cm distance. \par 
+The results are not conclusive for other situations than a white wall, because the 
+filtres can have different results in different lightning conditions and objects. Because 
+of that fact, we can't say that using these filtres are the best for every situation, despite 
+the fact that it worked best in our setup. \par
 
 \bibliography{References}
 \end{document}
