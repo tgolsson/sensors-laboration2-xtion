@@ -39,7 +39,7 @@ low-cost camera commonly used for robot vision. The concept became widely
 popular with the release of the Microsoft Kinect in late 2010. \par
 
 These cameras consist of two separate parts: one normal color-based camera, and
-one infra-red sensor with accompanying projector. The sensing consists of
+one infrared sensor with accompanying projector. The sensing consists of
 projecting a deterministic pattern onto the scene using an infrared emitter, and
 then unprojecting by comparing the image to previously captured patterns at
 known depths. By interpolating through these patterns, a full depth-image is
@@ -94,7 +94,7 @@ visualized using RVIZ. There are topics for \textbf{depth image}, \textbf{depth
   registered image}, \textbf{RGB image} and \textbf{infrared image}. From the
 depth and depth registered topic we can also get point cloud. The topics can be
 seen in table \vref{tab:table1} (we omitted the subtopics, because they contains
-the same data, but with different compress method, which is not relevant for
+the same data, but with different compression method, which is not relevant for
 this task). \par
 \noindent
 {
@@ -153,7 +153,7 @@ format.\par
 
 \subsection{Camera calibration}
 
-In this part we were supposed to calibrate the camera which requires to setup
+In this part we were supposed to calibrate the camera which requires to set up
 internal parameters. After that we should be able to get not distorted image
 from the camera and right distance measurement. \par
 
@@ -163,7 +163,7 @@ we listed all topics where camera publishes its data and we chose topic
 measured the number of squares on the checkerboard and their size. Using the
 command \texttt{rosrun camera\_calibration cameracalibrator.py --size=6x10
   --square=0.065 image:=/camera/rgb/image\_raw}{ } \texttt{camera:=/camera/rgb
-  --approximate=0.1}, we run the calibration application with correctly setup
+  --approximate=0.1}, we run the calibration application with correctly set up
 parameters according to our measurements of the calibrating pattern. \par
 
 In the calibration window we could see image from the selected topic with
@@ -186,7 +186,7 @@ openni2 package. The calibration file is shown in listing \vref{lst:calib}. \par
         
 To check the calibration results we pointed the camera at some straight lines
 (wall corners, table etc.) and checked if they got distorted around the
-edges (fish eye lens effect). That showed that the straight lines stayed as 
+edges (fisheye lens effect). That showed that the straight lines stayed as 
 straight lines, so the
 calibration was successful. To quantitatively verify if the calibration worked
 we run the code from the Task 4: Noise characterization, that measured average
@@ -195,7 +195,7 @@ the objects in different distances and checked if the mean of the distance is
 the same as the reality, which mostly was within the range of the camera. \par
 
 We also noticed that there are some surfaces like ceiling lights and reflective 
-surfaces, that ruins our measurements, becauce they showed completly wrong distance 
+surfaces, that ruins our measurements, because they showed completely wrong distance 
 data. \par
 	
 \lstinputlisting[language=yaml,caption={The calibration file for the camera},
@@ -381,24 +381,24 @@ previous one, but it preserves more details.
 \end{figure}
 
 \section{Results}
-During this excersice we could see, that data received from this ASUS camera are 
-full of noise and because of that they might not be completly reliable. On top of 
+During this exercise we could see, that data received from this ASUS camera are 
+full of noise and because of that they might not be completely reliable. On top of 
 that when we pointed the camera to some surfaces that emits or absorb light, we 
-get completly wrong distance data. \par
-Before we run the calibration we could see that camera suffers from the fish eye lens 
+get completely wrong distance data. \par
+Before we run the calibration we could see that camera suffers from the fisheye lens 
 effect, that distorted objects near the edges of the field of view. As we could see, 
-the calibration proces reduced this effect to minimum and resulted as a straight 
+the calibration process reduced this effect to minimum and resulted as a straight 
 undistorted lines. \par
 In order to reduce noise and we tried several methods how to get proper data. 
 First method was to increase the window from which we computed the mean distance and 
 variance. Our results showed that bigger window bring better results, but in the 
-realtime usage can be computationaly expensive. Second method was using several filters 
+real time usage can be computationally expensive. Second method was using several filters 
 that should smooth the picture and as a result reduce the noise. As our results showed, 
 the best performing filter were both temporal filters on the 50 cm distance, but gaussian 
 and bilateral filter at 300 cm distance. \par 
 The results are not conclusive for other situations than a white wall, because the 
 filtres can have different results in different lightning conditions and objects. Because 
-of that fact, we can't say that using these filtres are the best for every situation, despite 
+of that fact, we can't say that using these filters are the best for every situation, despite 
 the fact that it worked best in our setup. \par
 
 \bibliography{References}
