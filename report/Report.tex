@@ -1,12 +1,10 @@
 \documentclass[11pt]{article}
 %%%
 % TODO TOM: Add theory and motivation intro
-%% Finish smoothing comparison
-%% Comment code    
+%% Finish smoothing comparison Comment code
 
 
-%% TODO MAREK: Results/conclusion
-%%  Language check
+%% TODO MAREK: Results/conclusion Language check
 
 %%%
 %% Separate file for preamble with macros and stuff
@@ -20,9 +18,9 @@
 \maketitle %Title area
 \begin{center}
   \emph{All code for this exercise can be found at \\ \url{https://github.com/tgolsson/sensors-laboration2-xtion}}\\
-  \textbf{\large In some of the plots the variance is wrongly labeled as
-    ``staider''. This is just a typesetting error in the images, and not the
-    actual values. All values used are variances.}
+  \textbf{\large In some of the plots the ``variance'' is wrongly labeled as
+    ``standard deviation''. This is just a typesetting error in the images, and
+    not the actual values. All values report in all plots are variances.}
 \end{center}
 \tableofcontents
 \lstlistoflistings % List of all code snippets
@@ -30,7 +28,10 @@
 \listoftables \lstset{
   matchrangestart=t} %initialise the linerange-macro for \lstinput...
 \section{Theory and motivation}
-
+Robot vision is an important subject in the development of autonomous
+robots. However, as with all sensors, cameras suffer from noise which makes
+interpretation of the images hard, which in turn reduces the success of
+processing such as image identification.
 
 \subsection{RGBD-cameras}
 RGBD-cameras, short for \emph{Red-Green-Blue-Depth}-camera, is a type of
@@ -51,7 +52,7 @@ A common problem in any type of sensing is the introduction of noise into the
 system. This noise can come from many sources, and be predictable or
 unpredictable. Examples of noise sources could be frequency hum from electric
 circuits, flickering lights, air pollution or pure inaccuracy. This noise can
-skew the results of sensors that make algorithm much more error prone. \par
+skew the results of sensors and make execution more error prone. \par
 
 There are many approaches to reduce noise. Proper calibration and good testing
 environments is a good start, but this can only reduce external noise. Internal
@@ -188,10 +189,9 @@ To check the calibration results we pointed the camera at some straight lines
 edges. That showed that the straight lines stayed as straight lines, so the
 calibration was successful. To quantitatively verify if the calibration worked
 we run the code from the Task 4: Noise characterization, that measured average
-and standard deviation for the distance in the small window. Then we pointed the
-camera to the objects in different distances and checked if the mean of the
-distance is the same as the reality, which mostly was within the range of the
-camera. \par
+and variance for the distance in the small window. Then we pointed the camera to
+the objects in different distances and checked if the mean of the distance is
+the same as the reality, which mostly was within the range of the camera. \par
 	
 \lstinputlisting[language=yaml,caption={The calibration file for the camera},
 label={lst:calib}]{camera.yaml}
@@ -219,13 +219,13 @@ Another interesting pattern is that the mean error barely changes between the
 two windows; however, a larger window reduces the variance significantly. This
 is not so much related to reduced errors, but a result of the definition of a
 variance. If the errors are assumed to adhere to some sort of distribution
-$X \in \left(-\infty, \infty \right)$, then $\sum_{X_1}^{X_\infty} = \bar{X}$,
+$X \in \left(-\infty, \infty \right)$, then $\frac{1}{\left|X\right|}\sum_{X_1}^{X_\infty} = \bar{X}$,
 i.e., the static error. From this it follows that the variance will then also be
 on same order of magnitude as the noise in the signal. However, if too few
 points are sampled the sum will only approximate the mean, and the variance will
 become unstable. There is therefore a trade-off between window size and
-computational cost; i.e. while a larger window may be preferable for preciseness this may be
-computationally expensive, especially for more complex filters. \par
+computational cost; i.e. while a larger window may be preferable for preciseness
+this may be computationally expensive, especially for more complex filters. \par
 
 \begin{figure}[ht]
   \includegraphics[width=1\textwidth]{figures/20x20-plot.png}
@@ -243,8 +243,8 @@ Moving on, the distance can instead be kept constant while the window size is
 varied. This is shown for 50 cm in fig.  \vref{fig:variedwindow}. Here, the
 effect mentioned above with variance is amplified a lot; and error and variance
 become very stable for the large window sizes; and in the case of variance also
-very small. There is a visible artifact between samples 0-60 which
-has much smaller values than the other values. As most of the values are higher, these
+very small. There is a visible artifact between samples 0-60 which has much
+smaller values than the other values. As most of the values are higher, these
 smaller values can be discarded. \par
 
 
@@ -291,8 +291,7 @@ suffers a segmentation fault when there are too many NaN values in the
 input. \par
 
 \lstinputlisting[float,caption={The temporal smoothing
-  algorithm},label={lst:temporal},language=C++,linerange={240-277}]{../asus_node/src/asus_node.cc}
-
+  algorithm},label={lst:temporal},language=C++,linerange={269-320}]{../asus_node/src/asus_node.cc}
 
 In order to solve this issue, all NaN-values in the input are set to $10000$
 before being passed to the bilateral filter. By the edge preserving property of
@@ -302,13 +301,16 @@ filtering process. After the filtering is done, every cell which was set to 10
 elements. \par
 
 Another solution we considered - but did not implement - was to use local
-median-filtering at each \texttt{NaN}. We deemed this to be a very computationally
-expensive process, but could possibly yield better results. \par
+median-filtering at each \texttt{NaN}. We deemed this to be a very
+computationally expensive process, but could possibly yield better results. \par
 
 The result of filtering our depth-images is seen below in
 fig. \ref{fig:plots20x20filtered} and \vref{fig:plots40x40filtered}. Just as in
 the previous section, the unreliable data at the start is removed to clean up
-the results.
+the results. As can be seen, the two temporal smoothing algorithms far
+outperform the other algorithms at 50 cm for both window sizes, though the
+difference is very small. However, when increasing the distance up to 300 cm
+this changes as shown in fig. \vref{fig:300filt}. In this case, the gaussian and bilateral filter have a better performance on both variance and mean error. 
 
 \begin{figure}[ht]
   \centering
@@ -319,19 +321,27 @@ the results.
 \begin{figure}[ht]
   \begin{center}
     \includegraphics[width=1\textwidth]{figures/plot40x40filtered.png}
-    \captionof{figure}[Filtered data: 40x40,
-    50 cm]{\label{fig:plots40x40filtered} Mean and variance for the filters at 50
+    \captionof{figure}[Filtered data: 40x40, 50
+    cm]{\label{fig:plots40x40filtered} Mean and variance for the filters at 50
       cm with 40x40 window size.}
   \end{center}
-  
-
 \end{figure}
 
-To visualize the smoothing algorithms we set up a scene with a small box in the middle, and a bigger box behind it. This allowed us to clearly see the edges of the smaller box through the camera. As we can see in the original
-image (fig. \vref{fig:refimage}) there is a lot of noise and the edges are not as clear
-as they should be. The used filters should smooth out the noise to be able to
-get better measurements. The resulting image \vref{fig:filterswindow} shows all
-filters applied to the center of the image. \par
+\begin{figure}[ht]
+  \begin{center}
+    \includegraphics[width=1\textwidth]{figures/filtered300cm.png}
+    \captionof{figure}[Filtered data: 20x20, 300 cm]{\label{fig:300filt} Mean
+      and variance for the filters at 300 cm with 20x20 window size.}
+  \end{center}
+\end{figure}
+
+To visualize the smoothing algorithms we set up a scene with a small box in the
+middle, and a bigger box behind it. This allowed us to clearly see the edges of
+the smaller box through the camera. As we can see in the original image
+(fig. \vref{fig:refimage}) there is a lot of noise and the edges are not as
+clear as they should be. The used filters should smooth out the noise to be able
+to get better measurements. The resulting image \vref{fig:filterswindow} shows
+all filters applied to the center of the image. \par
 
 The first image is the original window 80x80 px without any filters applied but
 we removed NaN values and replaced them with high number. Second image is
@@ -345,15 +355,14 @@ filter. This filter also preserves sharp edges and removes some noise by
 smoothing the image. The second picture in the same line is the average over 10
 images. That method can reduce some noise, which appears only in few pictures or
 reduce effect of moving objects, that could affect the measurements. Last
-picture is the median over 10 images. Effect of that method is similar
-to the previous one, but it preserves more details.
+picture is the median over 10 images. Effect of that method is similar to the
+previous one, but it preserves more details.
 
 \begin{figure}[ht]
   \centering
   \includegraphics[width=1\textwidth]{figures/reference_rgb_depth.png}
-  \captionof{figure}[Reference scene: RGB and depth
-  image]{\label{fig:refimage} Reference image for demonstrating effects of the
-    filters}
+  \captionof{figure}[Reference scene: RGB and depth image]{\label{fig:refimage}
+    Reference image for demonstrating effects of the filters}
 \end{figure}
 \begin{figure}[ht]
   \centering
